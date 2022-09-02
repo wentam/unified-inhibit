@@ -50,8 +50,8 @@ static void printInhibited() {
 					 ((i & InhibitType::SCREENSAVER) > 0),
 					 ((i & InhibitType::SUSPEND) > 0));
 		lastInhibitType = i;
-		if (i != InhibitType::NONE && func1!=NULL) system(func1);
-		if (i == InhibitType::NONE && func2!=NULL) system(func2);
+		if (i != InhibitType::NONE && func1!=NULL) { printf("Running inhibit command: %s\n", func1); system(func1); };
+		if (i == InhibitType::NONE && func2!=NULL) { printf("Running uninhibit command: %s\n", func2);system(func2); };
 	}
 }
 
