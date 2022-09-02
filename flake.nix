@@ -19,7 +19,7 @@
         NIX_CFLAGS_COMPILE="-isystem ${pkgs.dbus.dev}/include/dbus-1.0/ -isystem ${pkgs.dbus.lib}/lib/dbus-1.0/include/";
       };
       packages.default = pkgs.stdenv.mkDerivation {
-        name="test";
+        name="unified-inhibit";
         src = ./.;
         buildInputs = [ pkgs.dbus ];
         NIX_CFLAGS_COMPILE="-isystem ${pkgs.dbus.dev}/include/dbus-1.0/ -isystem ${pkgs.dbus.lib}/lib/dbus-1.0/include/";
