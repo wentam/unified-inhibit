@@ -27,9 +27,8 @@
 
 using namespace uinhibit;
 
-// TODO TMP
-const char* func1;
-const char* func2;
+const char* func1 = NULL;
+const char* func2 = NULL;
 
 static std::vector<Inhibitor*> inhibitors;
 static InhibitType lastInhibitType = InhibitType::NONE;
@@ -51,12 +50,13 @@ static void printInhibited() {
 					 ((i & InhibitType::SCREENSAVER) > 0),
 					 ((i & InhibitType::SUSPEND) > 0));
 		lastInhibitType = i;
+		if (i != InhibitType::NONE && func1!=NULL) system(func1);
+		if (i == InhibitType::NONE && func2!=NULL) system(func2);
 	}
 }
 
 static void inhibitCB(Inhibitor* inhibitor, Inhibit inhibit) {
 	printf("Inhibit event type=%d appname='%s' reason='%s'\n", inhibit.type, inhibit.appname.c_str(), inhibit.reason.c_str());
-	if (func1!=NULL)system(func1);
 	// Forward to all active inhibitors (other than the originator)
 	try {
 		for (auto& ai : inhibitors) {
@@ -66,7 +66,7 @@ static void inhibitCB(Inhibitor* inhibitor, Inhibit inhibit) {
 				releasePlan[inhibit.id].push_back({ai, newInhibit.id});
 			}
 		}
-	} 
+	}
 	catch (uinhibit::InhibitRequestUnsupportedTypeException& e) {}
 	catch (uinhibit::InhibitNoResponseException& e) {}
 
@@ -76,8 +76,6 @@ static void inhibitCB(Inhibitor* inhibitor, Inhibit inhibit) {
 
 static void unInhibitCB(Inhibitor* inhibitor, Inhibit inhibit) {
 	printf("UnInhibit event type=%d appname='%s'\n", inhibit.type, inhibit.appname.c_str());
-	if (func2!=NULL)system(func2);
-
 	// Forward to all active inhibitors (other than the originator)
 	try {
 		if (releasePlan.contains(inhibit.id)) {
@@ -86,7 +84,7 @@ static void unInhibitCB(Inhibitor* inhibitor, Inhibit inhibit) {
 			}
 			releasePlan.erase(inhibit.id);
 		}
-	} 
+	}
 	catch (uinhibit::InhibitRequestUnsupportedTypeException& e) {}
 	catch (uinhibit::InhibitNoResponseException& e) {}
 	// Output our global inhibit state to STDOUT if it's changed
@@ -94,8 +92,10 @@ static void unInhibitCB(Inhibitor* inhibitor, Inhibit inhibit) {
 }
 
 int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
-	func1 = argv[1];
-	func2 = argv[2];
+	if (argc > 2) {
+		func1 = argv[1];
+		func2 = argv[2];
+	}
 
 	uinhibit::FreedesktopScreenSaverInhibitor i1(inhibitCB, unInhibitCB); inhibitors.push_back(&i1);
 	uinhibit::FreedesktopPowerManagerInhibitor i2(inhibitCB, unInhibitCB); inhibitors.push_back(&i2);

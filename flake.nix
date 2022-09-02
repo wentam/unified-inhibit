@@ -2,16 +2,13 @@
   inputs = {
     nixpkgs.url = github:NixOS/nixpkgs/nixos-unstable;
     flake-utils.url = "github:numtide/flake-utils";
-    wentampkgs.url = git+ssh://wentam@wentam.net:/mnt/NAS/git-host/nix-pkgs.git;
-    wentampkgs.flake = false;
   };
 
-  outputs = {self, nixpkgs, flake-utils, wentampkgs, ...}:
+  outputs = {self, nixpkgs, flake-utils, ...}:
   flake-utils.lib.eachDefaultSystem (
     system:
     let
       pkgs = nixpkgs.legacyPackages.${system};
-      wentam = import wentampkgs { inherit pkgs; };
     in {
       devShells.default = pkgs.gcc12Stdenv.mkDerivation {
         name = "build";
@@ -30,5 +27,4 @@
       };
     }
   );
-
 }

@@ -34,24 +34,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs",
-        "wentampkgs": "wentampkgs"
-      }
-    },
-    "wentampkgs": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1661658882,
-        "narHash": "sha256-ouFLsWrn9DBCjdTxmbIs+EIsjEDGfZUP21FqSO6Abjk=",
-        "ref": "refs/heads/master",
-        "rev": "79ed365c5140a9ae46aec1971211c07072df29d6",
-        "revCount": 8,
-        "type": "git",
-        "url": "ssh://wentam@wentam.net:/mnt/NAS/git-host/nix-pkgs.git"
-      },
-      "original": {
-        "type": "git",
-        "url": "ssh://wentam@wentam.net:/mnt/NAS/git-host/nix-pkgs.git"
+        "nixpkgs": "nixpkgs"
       }
     }
   },
