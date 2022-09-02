@@ -44,7 +44,7 @@ static InhibitType inhibited() {
 	return i;
 }
 
-static void printInhibited() {	
+static void printInhibited() {
 	auto i = inhibited();
 	if (lastInhibitType != i) {
 		printf("Inhibit state changed to: screensaver=%d suspend=%d\n",
@@ -103,5 +103,5 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
 	
 	std::vector<Inhibitor::ReturnObject> ros;
 	for (auto& inhibitor : inhibitors) ros.push_back(inhibitor->start());
-	while(1) for (auto& r : ros) r.handle.resume();	
+	while(1) for (auto& r : ros) {r.handle.resume(); fflush(stdout); }
 }
