@@ -140,6 +140,7 @@ class DBus {
 				const char* destination();
 				const char* interface();
 				const char* member();
+				const char* path();
 				uint32_t serial();
 				uint32_t replySerial();
 				Message newMethodReturn();

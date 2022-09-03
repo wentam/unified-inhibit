@@ -59,7 +59,8 @@ void THIS::handleHasInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
 	if (this->monitor) return;
 
 	bool ret = ((this->inhibited() & InhibitType::SUSPEND) > 0);
-	msg->newMethodReturn().appendArgs(DBUS_TYPE_BOOLEAN, &ret, DBUS_TYPE_INVALID)->send();
+	int32_t boolRet = (ret) ? 1 : 0;
+	msg->newMethodReturn().appendArgs(DBUS_TYPE_BOOLEAN, &boolRet, DBUS_TYPE_INVALID)->send();
 }
 
 void THIS::handleNameLostMsg(DBus::Message* msg) {

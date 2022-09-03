@@ -88,7 +88,7 @@ namespace uinhibit {
 	Inhibitor::ReturnObject DBusInhibitor::start() {
 		while(1) try {
 			dbus.readWriteDispatch(100);
-			while (1) {
+			while (1) try {
 				auto msg = dbus.popMessage();
 				if (msg.isNull()) break;
 
@@ -120,15 +120,21 @@ namespace uinhibit {
 				if (msg.type() == DBUS_MESSAGE_TYPE_SIGNAL) {
 					// TODO mySignals should probably be a map
 					for (auto& signal : mySignals) {
-						if ((signal.member == std::string(msg.member())) && 
+						if ((signal.member == std::string(msg.member())) &&
 								(signal.interface == std::string(msg.interface()))) {
 							(this->*signal.callback)(&msg);
 							break;
 						}
 					}
 				}
+			} catch (DBus::InvalidArgsError& e) {
+				printf("Got invalid args for a method call, ignoring.\n");
+				// TODO should we respond to the bad request in some way in this situation? Some apps
+				// could hang waiting for a response.
 			}
 			co_await std::suspend_always();
-		} catch (...) { std::terminate(); }
+		}
+		catch (std::exception &e) { printf("Exception: %s\n", e.what()); }
+		catch (...) { std::terminate(); }
 	}
 }; // End namespace uinhibit

@@ -19,9 +19,17 @@ THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
 	: DBusInhibitor
 		(inhibitCB, unInhibitCB, INTERFACE,
 		 {
+			 // TODO path specifiers, especially with wildcards "*" 
+			 // and /org/gnome/SessionManager/Inhibitor* would be useful here
+			 //
+			 // interface and method name should also accept wildcards
 			 {INTERFACE, "Inhibit", METHOD_CAST &THIS::handleInhibitMsg, "*"},
 			 {INTERFACE, "Uninhibit", METHOD_CAST &THIS::handleUnInhibitMsg, "*"},
 			 {INTERFACE, "IsInhibited", METHOD_CAST &THIS::handleIsInhibitedMsg, "*"},
+			 {INTERFACE, "GetInhibitors", METHOD_CAST &THIS::handleGetInhibitors, "*"},
+			 {INTERFACE, "GetReason", METHOD_CAST &THIS::handleGetReason, "*"},
+			 {INTERFACE, "GetAppId", METHOD_CAST &THIS::handleGetAppID, "*"},
+			 {INTERFACE, "GetFlags", METHOD_CAST &THIS::handleGetFlags, "*"},
 			 {INTROSPECT_INTERFACE, "Introspect", METHOD_CAST &THIS::handleIntrospect, INTERFACE}
 		 },
 		 {
@@ -69,7 +77,72 @@ void THIS::handleIsInhibitedMsg(DBus::Message* msg, DBus::Message* retmsg) {
 	uint32_t flags = 0; msg->getArgs(DBUS_TYPE_UINT32, &flags, DBUS_TYPE_INVALID);
 
 	bool ret = ((gnomeType2us((GnomeInhibitType)flags) & this->inhibited()) > 0);
-	msg->newMethodReturn().appendArgs(DBUS_TYPE_BOOLEAN, &ret, DBUS_TYPE_INVALID);
+	int32_t boolRet = (ret) ? 1 : 0;
+	msg->newMethodReturn().appendArgs(DBUS_TYPE_BOOLEAN, &boolRet, DBUS_TYPE_INVALID)->send();
+}
+
+void THIS::handleGetInhibitors(DBus::Message* msg, DBus::Message* retmsg) {
+	if (this->monitor) return;
+
+	std::vector<std::string> paths;
+	for (auto& [id, inhibit] : this->activeInhibits) {
+		auto idStruct = reinterpret_cast<_InhibitID*>(&inhibit.id[0]);
+		paths.push_back(std::string(PATH)+"/Inhibitor"+std::to_string(idStruct->cookie));
+	}
+
+	std::vector<const char*> flatPaths;
+	for (auto& path : paths) {
+		flatPaths.push_back(path.c_str());
+	}
+
+	const char** retPaths = flatPaths.data();
+	msg->newMethodReturn().appendArgs(DBUS_TYPE_ARRAY, DBUS_TYPE_OBJECT_PATH, &retPaths, flatPaths.size(), DBUS_TYPE_INVALID)->send();
+}
+
+void THIS::handleGetFlags(DBus::Message* msg, DBus::Message* retmsg) {
+	if (this->monitor) return;
+
+	uint32_t flags = 0;
+	try {
+		uint32_t cookie = this->inhibitorPathToCookie(msg->path());	
+		uint32_t flags = us2gnomeType(this->inhibitFromCookie(cookie)->type);
+	} catch (InhibitNotFoundException& e)  { 
+		printf(INTERFACE ": Caller requested information about non-existant inhibit.\n");
+		// TODO: does dbus have a way for us to return an error to the caller?
+	}
+
+	msg->newMethodReturn().appendArgs(DBUS_TYPE_UINT32, &flags, DBUS_TYPE_INVALID)->send();
+}
+
+void THIS::handleGetAppID(DBus::Message* msg, DBus::Message* retmsg) {
+	if (this->monitor) return;
+
+	const char* appidStr = "";
+	try {
+		uint32_t cookie = this->inhibitorPathToCookie(msg->path());	
+		appidStr = this->inhibitFromCookie(cookie)->appname.c_str();
+	} catch (InhibitNotFoundException& e) {	
+		printf(INTERFACE ": Caller requested information about non-existant inhibit.\n");
+		// TODO: does dbus have a way for us to return an error to the caller?
+	}
+
+	msg->newMethodReturn().appendArgs(DBUS_TYPE_STRING, &appidStr, DBUS_TYPE_INVALID)->send();
+}
+
+void THIS::handleGetReason(DBus::Message* msg, DBus::Message* retmsg) {
+	if (this->monitor) return;
+	std::string path = msg->path();	
+
+	const char* str = "";
+	try {
+		uint32_t cookie = this->inhibitorPathToCookie(msg->path());	
+		str = this->inhibitFromCookie(cookie)->reason.c_str();
+	} catch (InhibitNotFoundException& e) {
+		printf(INTERFACE ": Caller requested information about non-existant inhibit.\n");
+		// TODO: does dbus have a way for us to return an error to the caller?
+	}
+
+	msg->newMethodReturn().appendArgs(DBUS_TYPE_STRING, &str, DBUS_TYPE_INVALID)->send();
 }
 
 void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {	
@@ -78,6 +151,7 @@ void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
 	const char* introspectXml = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
 		"<node>"
 		"  <interface name='" INTERFACE "'>"
+		// TODO do we specify a path?
 		"    <method name='Inhibit'>"
 		"      <arg type='s' name='app_id' direction='in' />"
 		"      <arg type='u' name='toplevel_xid' direction='in' />"
@@ -92,7 +166,6 @@ void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
 		"      <arg type='u' name='flags' direction='in' />"
 		"      <arg type='b' name='is_inhibited' direction='out' />"
 		"    </method>"
-		// TODO
 		"    <method name='GetInhibitors'>"
 		"      <arg name='inhibitors' direction='out' type='ao' />"
 		"    </method>"
@@ -106,6 +179,16 @@ void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
 		"    </signal>"
 		// TODO
 		"    <property name='InhibitedActions' type='u' access='read' />"
+		// TODO these are supposed to be implemented as a specific path, do we specify that here?
+		"    <method name='GetAppId'>"
+		"      <arg type='s' name='app_id' direction='out' />"
+		"    </method>"
+		"    <method name='GetReason'>"
+		"      <arg type='s' name='reason' direction='out' />"
+		"    </method>"
+		"    <method name='GetFlags'>"
+		"      <arg type='u' name='flags' direction='out' />"
+		"    </method>"
 		"  </interface>"
 		"</node>";
 
@@ -190,3 +273,23 @@ THIS::GnomeInhibitType THIS::us2gnomeType(InhibitType us) {
 
 	return ret;
 }
+
+uint32_t THIS::inhibitorPathToCookie(std::string path) {
+	// Get last portion path ('Inhibitor1234') and ignore everything not a digit (resulting in '1234')
+	std::string buf;
+	for (auto c : path) { 
+		if (c == '/') buf.clear(); 
+		if (isdigit(c) != 0) buf.push_back(c); 
+	}
+
+	return std::stoi(buf);	
+};
+
+Inhibit* THIS::inhibitFromCookie(uint32_t cookie) {
+	for (auto& [id,inhibit] : this->activeInhibits) {
+		auto idStruct = reinterpret_cast<_InhibitID*>(&inhibit.id[0]);
+		if (cookie == idStruct->cookie) return &inhibit;
+	}
+	
+	throw InhibitNotFoundException(); 
+};

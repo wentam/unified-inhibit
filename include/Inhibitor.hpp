@@ -15,22 +15,7 @@
 namespace uinhibit {
 	class InhibitRequestUnsupportedTypeException : std::exception {};
 	class InhibitNoResponseException : std::exception {};
-
-	template<typename T>
-	class LockWrap {
-		public:
-			LockWrap() {};
-			LockWrap(T startValue) { data = startValue; };
-			//T* get() { std::unique_lock<std::mutex> lk(lock); return &data; };
-		
-			
-
-			//T* operator()() { return this->get(); };
-			void operator=(T& a) { std::unique_lock<std::mutex> lk(lock); data = a; };
-		private:
-			T data;
-			std::mutex lock;
-	};
+	class InhibitNotFoundException : std::exception {};
 
 	// Unique ID for an Inhibit. Data within is Inhibitor-specific.
 	// Unique among all Inhibitors.
@@ -192,7 +177,7 @@ namespace uinhibit {
 				uint64_t instanceID;
 				char sender[1024];
 				uint32_t cookie;
-			};	
+			};
 
 			void handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg);
 			void handleUnInhibitMsg(DBus::Message* msg, DBus::Message* retmsg);
@@ -213,16 +198,16 @@ namespace uinhibit {
 	};
 
 	class GnomeSessionManagerInhibitor : public DBusInhibitor {
-			struct _InhibitID {
-				uint64_t instanceID;
-				char sender[1024];
-				uint32_t cookie;
-			};	
-
 		public:
 			GnomeSessionManagerInhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
 																				std::function<void(Inhibitor*, Inhibit)> unInhibitCB);
 		protected:
+			struct _InhibitID {
+				uint64_t instanceID;
+				char sender[1024];
+				uint32_t cookie;
+			};
+
 			enum GnomeInhibitType {
 				NONE = 0,
 				LOGOUT = 1,
@@ -235,7 +220,14 @@ namespace uinhibit {
 			void handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg);
 			void handleUnInhibitMsg(DBus::Message* msg, DBus::Message* retmsg);
 			void handleIsInhibitedMsg(DBus::Message* msg, DBus::Message* retmsg);
+			void handleGetInhibitors(DBus::Message* msg, DBus::Message* retmsg);
 			void handleIntrospect(DBus::Message* msg, DBus::Message* retmsg);
+
+			// For each inhibitor (org/gnome/SessionManager/Inhibitorxyzw)
+			void handleGetAppID(DBus::Message* msg, DBus::Message* retmsg);
+			void handleGetReason(DBus::Message* msg, DBus::Message* retmsg);
+			void handleGetFlags(DBus::Message* msg, DBus::Message* retmsg);
+
 			std::map<std::string, std::vector<InhibitID>> inhibitOwners; // sender, {ids}
 			uint32_t lastCookie = 0;
 
@@ -245,9 +237,12 @@ namespace uinhibit {
 			void doUnInhibit(InhibitID id) override;
 			void handleInhibitStateChanged(InhibitType inhibited) override {};
 
+		private:
 			InhibitType gnomeType2us(GnomeInhibitType t);
       GnomeInhibitType us2gnomeType(InhibitType us);
 			InhibitID mkId(std::string sender, uint32_t cookie);
+			uint32_t inhibitorPathToCookie(std::string path);
+			Inhibit* inhibitFromCookie(uint32_t cookie); // throws InhibitNotFoundException
 	};
 
 	class GnomeScreenSaverInhibitor : public Inhibitor {

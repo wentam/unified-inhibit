@@ -201,7 +201,7 @@ struct UserDataWrap {
 };
 
 static DBusHandlerResult registerObjectPathFuncWrap(
-	DBusConnection *conn,
+	[[maybe_unused]]DBusConnection *conn,
 	DBusMessage *msg,
 	void *user_data
 ) {
@@ -280,6 +280,10 @@ const char* DBus::Message::interface() {
 
 const char* DBus::Message::member() {
 	return dbus_message_get_member(this->msg.get()->msg);
+};
+
+const char* DBus::Message::path() {
+	return dbus_message_get_path(this->msg.get()->msg);
 };
 
 uint32_t DBus::Message::serial() {

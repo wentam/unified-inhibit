@@ -97,7 +97,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
 		func2 = argv[2];
 	}
 
-	uinhibit::FreedesktopScreenSaverInhibitor i1(inhibitCB, unInhibitCB); inhibitors.push_back(&i1);
+//	uinhibit::FreedesktopScreenSaverInhibitor i1(inhibitCB, unInhibitCB); inhibitors.push_back(&i1);
 	uinhibit::FreedesktopPowerManagerInhibitor i2(inhibitCB, unInhibitCB); inhibitors.push_back(&i2);
 	uinhibit::GnomeSessionManagerInhibitor i3(inhibitCB, unInhibitCB); inhibitors.push_back(&i3);
 	
