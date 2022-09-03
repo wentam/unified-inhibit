@@ -167,48 +167,83 @@ void THIS::handleGetReason(DBus::Message* msg, DBus::Message* retmsg) {
 void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {	
 	if (this->monitor || std::string(msg->destination()) != INTERFACE) return;
 
-	const char* introspectXml = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
-		"<node>"
-		"  <interface name='" INTERFACE "'>"
-		// TODO do we specify a path?
-		"    <method name='Inhibit'>"
-		"      <arg type='s' name='app_id' direction='in' />"
-		"      <arg type='u' name='toplevel_xid' direction='in' />"
-		"      <arg type='s' name='reason' direction='in' />"
-		"      <arg type='u' name='flags' direction='in' / >"
-		"      <arg type='u' name='inhibit_cookie' direction='out' />"
-    "    </method>"
-		"    <method name='Uninhibit'>"
-		"      <arg type='u' name='inhibit_cookie' direction='in' />"
-		"    </method>"
-		"    <method name='IsInhibited'>"
-		"      <arg type='u' name='flags' direction='in' />"
-		"      <arg type='b' name='is_inhibited' direction='out' />"
-		"    </method>"
-		"    <method name='GetInhibitors'>"
-		"      <arg name='inhibitors' direction='out' type='ao' />"
-		"    </method>"
-		"    <signal name='InhibitorAdded'>"
-		"      <arg name='id' type='o' />"
-		"    </signal>"
-		"    <signal name='InhibitorRemoved'>"
-		"      <arg name='id' type='o' />"
-		"    </signal>"
-		"    <property name='InhibitedActions' type='u' access='read' />"
-		// TODO these are supposed to be implemented as a specific path, do we specify that here?
-		"    <method name='GetAppId'>"
-		"      <arg type='s' name='app_id' direction='out' />"
-		"    </method>"
-		"    <method name='GetReason'>"
-		"      <arg type='s' name='reason' direction='out' />"
-		"    </method>"
-		"    <method name='GetFlags'>"
-		"      <arg type='u' name='flags' direction='out' />"
-		"    </method>"
-		"  </interface>"
-		"</node>";
 
-	msg->newMethodReturn().appendArgs(DBUS_TYPE_STRING,&introspectXml,DBUS_TYPE_INVALID)->send();
+	if (std::string(msg->path()) == "/")  {
+		const char* introspectXml = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
+			"<node name='/'>"
+			"  <node name='org/gnome/SessionManager' />"
+			"</node>";
+
+		msg->newMethodReturn().appendArgs(DBUS_TYPE_STRING,&introspectXml,DBUS_TYPE_INVALID)->send();
+	}
+
+	if (std::string(msg->path()) == "/org/gnome/SessionManager")  {
+		std::string xml = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
+			"<node name='" PATH "'>"
+			"  <interface name='" INTERFACE "'>"
+			"    <method name='Inhibit'>"
+			"      <arg type='s' name='app_id' direction='in'/>"
+			"      <arg type='u' name='toplevel_xid' direction='in'/>"
+			"      <arg type='s' name='reason' direction='in'/>"
+			"      <arg type='u' name='flags' direction='in'/>"
+			"      <arg type='u' name='inhibit_cookie' direction='out'/>"
+			"    </method>"
+			"    <method name='Uninhibit'>"
+			"      <arg type='u' name='inhibit_cookie' direction='in'/>"
+			"    </method>"
+			"    <method name='IsInhibited'>"
+			"      <arg type='u' name='flags' direction='in'/>"
+			"      <arg type='b' name='is_inhibited' direction='out'/>"
+			"    </method>"
+			"    <method name='GetInhibitors'>"
+			"      <arg name='inhibitors' direction='out' type='ao'/>"
+			"    </method>"
+			"    <signal name='InhibitorAdded'>"
+			"      <arg name='id' type='o'/>"
+			"    </signal>"
+			"    <signal name='InhibitorRemoved'>"
+			"      <arg name='id' type='o'/>"
+			"    </signal>"
+			"    <property name='InhibitedActions' type='u' access='read'/>"
+			"  </interface>"
+			"  <node name='InhibitorXXXX'/>";
+
+		for (auto& [id, inhibit] : this->activeInhibits) {
+			auto idStruct = reinterpret_cast<_InhibitID*>(&inhibit.id[0]);
+			xml += "<node name='Inhibitor"+std::to_string(idStruct->cookie)+"'/>";
+		}
+
+		xml += "</node>";
+
+		const char* introspectXml = xml.c_str();
+
+		msg->newMethodReturn().appendArgs(DBUS_TYPE_STRING,&introspectXml,DBUS_TYPE_INVALID)->send();
+	}
+
+	if (std::string(msg->path()).rfind("/org/gnome/SessionManager/Inhibitor", 0) == 0)  {
+		std::string name = std::string(PATH "/Inhibitor")+"XXXX";
+		uint32_t cookie = this->inhibitorPathToCookie(msg->path());
+		if (cookie > 0) name = std::string(PATH "/Inhibitor")+std::to_string(cookie);
+
+		std::string xml = std::string(DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE)+
+			std::string("<node name='" PATH )+name+"'>"
+			"  <interface name='" INTERFACE ".Inhibitor'>"
+			"    <method name='GetAppId'>"
+			"      <arg type='s' name='app_id' direction='out'/>"
+			"    </method>"
+			"    <method name='GetReason'>"
+			"      <arg type='s' name='reason' direction='out'/>"
+			"    </method>"
+			"    <method name='GetFlags'>"
+			"      <arg type='u' name='flags' direction='out'/>"
+			"    </method>"
+			"  </interface>"
+			"</node>";
+
+
+		const char* introspectXml = xml.c_str();
+		msg->newMethodReturn().appendArgs(DBUS_TYPE_STRING,&introspectXml,DBUS_TYPE_INVALID)->send();
+	}
 }
 
 void THIS::handleInhibitEvent(Inhibit inhibit) {
@@ -320,6 +355,7 @@ uint32_t THIS::inhibitorPathToCookie(std::string path) {
 		if (isdigit(c) != 0) buf.push_back(c); 
 	}
 
+	if (buf == "") return 0;
 	return std::stoi(buf);	
 };
 

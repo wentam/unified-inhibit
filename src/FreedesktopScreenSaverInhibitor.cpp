@@ -63,21 +63,32 @@ void THIS::handleNameLostMsg(DBus::Message* msg) {
 void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
 	if (this->monitor || std::string(msg->destination()) != INTERFACE) return;
 
-	const char* introspectXml = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
-		"<node>"
-		"  <interface name=\"org.freedesktop.ScreenSaver\">"
-		"    <method name='Inhibit'>"
-		"      <arg name='application_name' type='s' direction='in'/>"
-		"      <arg name='reason_for_inhibit' type='s' direction='in'/>"
-		"      <arg name='cookie' type='u' direction='out'/>"
-		"    </method>"
-		"    <method name='UnInhibit'>"
-		"      <arg name='cookie' type='u' direction='in'/>"
-		"    </method>"
-		"  </interface>"
-		"</node>";
+	if (std::string(msg->path()) == "/")  {
+		const char* introspectXml = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
+			"<node name='/'>"
+			"  <node name='ScreenSaver' />"
+			"</node>";
 
-	msg->newMethodReturn().appendArgs(DBUS_TYPE_STRING,&introspectXml,DBUS_TYPE_INVALID)->send();
+		msg->newMethodReturn().appendArgs(DBUS_TYPE_STRING,&introspectXml,DBUS_TYPE_INVALID)->send();
+	} 
+
+	if (std::string(msg->path()) == "/ScreenSaver")  {
+		const char* introspectXml = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
+			"<node name='ScreenSaver'>"
+			"  <interface name=\"org.freedesktop.ScreenSaver\">"
+			"    <method name='Inhibit'>"
+			"      <arg name='application_name' type='s' direction='in'/>"
+			"      <arg name='reason_for_inhibit' type='s' direction='in'/>"
+			"      <arg name='cookie' type='u' direction='out'/>"
+			"    </method>"
+			"    <method name='UnInhibit'>"
+			"      <arg name='cookie' type='u' direction='in'/>"
+			"    </method>"
+			"  </interface>"
+			"</node>";
+
+		msg->newMethodReturn().appendArgs(DBUS_TYPE_STRING,&introspectXml,DBUS_TYPE_INVALID)->send();
+	}
 }
 
 Inhibit THIS::doInhibit(InhibitRequest r) {
