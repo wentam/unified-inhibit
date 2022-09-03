@@ -19,10 +19,6 @@ THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
 	: DBusInhibitor
 		(inhibitCB, unInhibitCB, INTERFACE,
 		 {
-			 // TODO path specifiers, especially with wildcards "*" 
-			 // and /org/gnome/SessionManager/Inhibitor* would be useful here
-			 //
-			 // interface and method name should also accept wildcards
 			 {INTERFACE, "Inhibit", METHOD_CAST &THIS::handleInhibitMsg, "*"},
 			 {INTERFACE, "Uninhibit", METHOD_CAST &THIS::handleUnInhibitMsg, "*"},
 			 {INTERFACE, "IsInhibited", METHOD_CAST &THIS::handleIsInhibitedMsg, "*"},
@@ -206,7 +202,8 @@ void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
 			"    </signal>"
 			"    <property name='InhibitedActions' type='u' access='read'/>"
 			"  </interface>"
-			"  <node name='InhibitorXXXX'/>";
+			"  <node name='InhibitorXXXX'/>"; // InhibitorXXXX exists for human reference when there are
+																				// no inhibitors
 
 		for (auto& [id, inhibit] : this->activeInhibits) {
 			auto idStruct = reinterpret_cast<_InhibitID*>(&inhibit.id[0]);
