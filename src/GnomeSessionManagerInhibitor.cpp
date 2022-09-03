@@ -33,8 +33,7 @@ THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
 			 {INTROSPECT_INTERFACE, "Introspect", METHOD_CAST &THIS::handleIntrospect, INTERFACE}
 		 },
 		 {
-			// TODO
-			// {DBUS_INTERFACE, "NameOwnerChanged", SIGNAL_CAST &THIS::handleNameLostMsg}
+			{DBUS_INTERFACE, "NameOwnerChanged", SIGNAL_CAST &THIS::handleNameLostMsg}
 		 }){}
 
 void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
@@ -97,6 +96,12 @@ void THIS::handleGetInhibitors(DBus::Message* msg, DBus::Message* retmsg) {
 
 	const char** retPaths = flatPaths.data();
 	msg->newMethodReturn().appendArgs(DBUS_TYPE_ARRAY, DBUS_TYPE_OBJECT_PATH, &retPaths, flatPaths.size(), DBUS_TYPE_INVALID)->send();
+}
+
+void THIS::handleNameLostMsg(DBus::Message* msg) {
+	const char* name; msg->getArgs(DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
+	for (auto id : this->inhibitOwners[name]) this->registerUnInhibit(id);
+	this->inhibitOwners[name].clear();
 }
 
 void THIS::handleGetFlags(DBus::Message* msg, DBus::Message* retmsg) {

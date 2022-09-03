@@ -221,6 +221,7 @@ namespace uinhibit {
 			void handleUnInhibitMsg(DBus::Message* msg, DBus::Message* retmsg);
 			void handleIsInhibitedMsg(DBus::Message* msg, DBus::Message* retmsg);
 			void handleGetInhibitors(DBus::Message* msg, DBus::Message* retmsg);
+			void handleNameLostMsg(DBus::Message* msg);
 			void handleIntrospect(DBus::Message* msg, DBus::Message* retmsg);
 
 			// For each inhibitor (org/gnome/SessionManager/Inhibitorxyzw)
