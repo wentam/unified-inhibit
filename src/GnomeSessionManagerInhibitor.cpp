@@ -30,6 +30,7 @@ THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
 			 {INTERFACE, "GetReason", METHOD_CAST &THIS::handleGetReason, "*"},
 			 {INTERFACE, "GetAppId", METHOD_CAST &THIS::handleGetAppID, "*"},
 			 {INTERFACE, "GetFlags", METHOD_CAST &THIS::handleGetFlags, "*"},
+			 {"org.freedesktop.DBus.Properties", "Get", METHOD_CAST &THIS::handleGetProperty, "*"},
 			 {INTROSPECT_INTERFACE, "Introspect", METHOD_CAST &THIS::handleIntrospect, INTERFACE}
 		 },
 		 {
@@ -119,6 +120,19 @@ void THIS::handleGetFlags(DBus::Message* msg, DBus::Message* retmsg) {
 	msg->newMethodReturn().appendArgs(DBUS_TYPE_UINT32, &flags, DBUS_TYPE_INVALID)->send();
 }
 
+void THIS::handleGetProperty(DBus::Message* msg, DBus::Message* retmsg) {
+	if (this->monitor) return;	
+	const char* interface; const char* property;
+	msg->getArgs(DBUS_TYPE_STRING, &interface, DBUS_TYPE_STRING, &property, DBUS_TYPE_INVALID);
+
+	if (std::string(interface) == INTERFACE) {
+		if (std::string(property) == "InhibitedActions") {
+			uint32_t flags = us2gnomeType(this->inhibited());
+			msg->newMethodReturn().appendArgs(DBUS_TYPE_UINT32, &flags, DBUS_TYPE_INVALID)->send();
+		}
+	}
+}
+
 void THIS::handleGetAppID(DBus::Message* msg, DBus::Message* retmsg) {
 	if (this->monitor) return;
 
@@ -180,7 +194,6 @@ void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
 		"    <signal name='InhibitorRemoved'>"
 		"      <arg name='id' type='o' />"
 		"    </signal>"
-		// TODO
 		"    <property name='InhibitedActions' type='u' access='read' />"
 		// TODO these are supposed to be implemented as a specific path, do we specify that here?
 		"    <method name='GetAppId'>"

@@ -222,12 +222,14 @@ namespace uinhibit {
 			void handleIsInhibitedMsg(DBus::Message* msg, DBus::Message* retmsg);
 			void handleGetInhibitors(DBus::Message* msg, DBus::Message* retmsg);
 			void handleNameLostMsg(DBus::Message* msg);
+			void handleGetProperty(DBus::Message* msg, DBus::Message* retmsg);
 			void handleIntrospect(DBus::Message* msg, DBus::Message* retmsg);
 
 			// For each inhibitor (org/gnome/SessionManager/Inhibitorxyzw)
 			void handleGetAppID(DBus::Message* msg, DBus::Message* retmsg);
 			void handleGetReason(DBus::Message* msg, DBus::Message* retmsg);
 			void handleGetFlags(DBus::Message* msg, DBus::Message* retmsg);
+
 
 			std::map<std::string, std::vector<InhibitID>> inhibitOwners; // sender, {ids}
 			uint32_t lastCookie = 0;
