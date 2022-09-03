@@ -94,14 +94,14 @@ namespace uinhibit {
 			//
 			// Useful to implement Inhibitors that actively 'push' their state on these events,
 			// such as the org.freedesktop.PowerManager.HasInhibitChanged signal
-			virtual void handleInhibitEvent() = 0;
-			virtual void handleUnInhibitEvent() = 0;
-			virtual void handleInhibitStateChanged(InhibitType inhibited) = 0;
+			virtual void handleInhibitEvent(Inhibit inhibit) = 0;
+			virtual void handleUnInhibitEvent(Inhibit inhibit) = 0;
+			virtual void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) = 0;
 
 			std::function<void(Inhibitor*, Inhibit)> inhibitCB;
 			std::function<void(Inhibitor*, Inhibit)> unInhibitCB;
 		private:
-			void callEvent(bool isInhibit);
+			void callEvent(bool isInhibit, Inhibit i);
 			InhibitType lastInhibitState = InhibitType::NONE;
 	};
 
@@ -158,9 +158,9 @@ namespace uinhibit {
 			std::map<std::string, std::vector<InhibitID>> inhibitOwners; // sender, {ids}
 			uint32_t lastCookie = 0;
 
-			void handleInhibitEvent() {};
-			void handleUnInhibitEvent() {};
-			void handleInhibitStateChanged(InhibitType inhibited) {};
+			void handleInhibitEvent(Inhibit inhibit) {};
+			void handleUnInhibitEvent(Inhibit inhibit) {};
+			void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) {};
 
 			Inhibit doInhibit(InhibitRequest r) override;
 			void doUnInhibit(InhibitID id) override;
@@ -188,13 +188,13 @@ namespace uinhibit {
 			std::map<std::string, std::vector<InhibitID>> inhibitOwners; // sender, {ids}
 			uint32_t lastCookie = 0;
 
-			void handleInhibitEvent() {};
-			void handleUnInhibitEvent() {};
+			void handleInhibitEvent(Inhibit inhibit) {};
+			void handleUnInhibitEvent(Inhibit inhibit) {};
 			Inhibit doInhibit(InhibitRequest r) override;
 			void doUnInhibit(InhibitID id) override;
 
 
-			void handleInhibitStateChanged(InhibitType inhibited);
+			void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit);
 	};
 
 	class GnomeSessionManagerInhibitor : public DBusInhibitor {
@@ -232,11 +232,11 @@ namespace uinhibit {
 			std::map<std::string, std::vector<InhibitID>> inhibitOwners; // sender, {ids}
 			uint32_t lastCookie = 0;
 
-			void handleInhibitEvent() {};
-			void handleUnInhibitEvent() {};
+			void handleInhibitEvent(Inhibit inhibit) override;
+			void handleUnInhibitEvent(Inhibit inhibit) override;
+			void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) override {};
 			Inhibit doInhibit(InhibitRequest r) override;
 			void doUnInhibit(InhibitID id) override;
-			void handleInhibitStateChanged(InhibitType inhibited) override {};
 
 		private:
 			InhibitType gnomeType2us(GnomeInhibitType t);

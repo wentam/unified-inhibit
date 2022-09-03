@@ -174,11 +174,9 @@ void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
 		"    <method name='GetInhibitors'>"
 		"      <arg name='inhibitors' direction='out' type='ao' />"
 		"    </method>"
-		// TODO
 		"    <signal name='InhibitorAdded'>"
 		"      <arg name='id' type='o' />"
 		"    </signal>"
-		// TODO
 		"    <signal name='InhibitorRemoved'>"
 		"      <arg name='id' type='o' />"
 		"    </signal>"
@@ -198,6 +196,28 @@ void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
 		"</node>";
 
 	msg->newMethodReturn().appendArgs(DBUS_TYPE_STRING,&introspectXml,DBUS_TYPE_INVALID)->send();
+}
+
+void THIS::handleInhibitEvent(Inhibit inhibit) {
+	if (this->monitor) return;
+
+	auto idStruct = reinterpret_cast<_InhibitID*>(&inhibit.id[0]);
+	std::string ret = std::string(PATH "/Inhibitor")+std::to_string(idStruct->cookie);
+	const char *str = ret.c_str();
+	dbus.newSignal(PATH, INTERFACE, "InhibitorAdded")
+		.appendArgs(DBUS_TYPE_OBJECT_PATH, &str, DBUS_TYPE_INVALID)
+		->send();
+};
+
+void THIS::handleUnInhibitEvent(Inhibit inhibit) {
+	if (this->monitor) return;
+
+	auto idStruct = reinterpret_cast<_InhibitID*>(&inhibit.id[0]);
+	std::string ret = std::string(PATH "/Inhibitor")+std::to_string(idStruct->cookie);
+	const char *str = ret.c_str();
+	dbus.newSignal(PATH, INTERFACE, "InhibitorRemoved")
+		.appendArgs(DBUS_TYPE_OBJECT_PATH, &str, DBUS_TYPE_INVALID)
+		->send();
 }
 
 Inhibit THIS::doInhibit(InhibitRequest r) {

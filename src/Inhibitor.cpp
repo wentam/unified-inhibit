@@ -22,16 +22,17 @@ namespace uinhibit {
 	Inhibit Inhibitor::inhibit(InhibitRequest i)	{
 		auto ii = this->doInhibit(i);	
 		activeInhibits.insert({ii.id, ii});
-		this->callEvent(true);
+		this->callEvent(true, ii);
 
 		return ii;
 	}
 
 	void Inhibitor::unInhibit(InhibitID id)	{
 		if (this->activeInhibits.contains(id)) {
+			auto mid = this->activeInhibits.at(id);
 			this->doUnInhibit(id);	
 			this->activeInhibits.erase(id);
-			this->callEvent(false);
+			this->callEvent(false, mid);
 		}
 		// TODO: else throw exception?
 	}
@@ -39,7 +40,7 @@ namespace uinhibit {
 	void Inhibitor::registerInhibit(Inhibit& i) {
 		activeInhibits.insert({i.id, i});
 		this->inhibitCB(this, i);
-		this->callEvent(true);
+		this->callEvent(true, i);
 	}
 
 	void Inhibitor::registerUnInhibit(InhibitID& id) {
@@ -47,17 +48,17 @@ namespace uinhibit {
 			auto mid = this->activeInhibits.at(id);
 			this->activeInhibits.erase(id);
 			this->unInhibitCB(this, mid);
-			this->callEvent(false);
+			this->callEvent(false, mid);
 		}
 	}
 
-	void Inhibitor::callEvent(bool isInhibit) {
-		if (isInhibit) this->handleInhibitEvent();
-		else           this->handleUnInhibitEvent();
+	void Inhibitor::callEvent(bool isInhibit, Inhibit i) {
+		if (isInhibit) this->handleInhibitEvent(i);
+		else           this->handleUnInhibitEvent(i);
 
 		InhibitType inhibited = this->inhibited();
 		if (inhibited != this->lastInhibitState) {
-			this->handleInhibitStateChanged(inhibited);
+			this->handleInhibitStateChanged(inhibited, i);
 			this->lastInhibitState = inhibited;
 		}
 	}

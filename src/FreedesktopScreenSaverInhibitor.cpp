@@ -38,7 +38,7 @@ void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
 
 	// Create/register our new inhibit
 	Inhibit in = {InhibitType::SCREENSAVER, appname, reason, this->mkId(msg->sender(), cookie)};
-	this->registerInhibit(in);	
+	this->registerInhibit(in);
 
 	// Track inhibit owner to allow unInhibit on crash
 	this->inhibitOwners[msg->sender()].push_back(in.id);
@@ -60,7 +60,7 @@ void THIS::handleNameLostMsg(DBus::Message* msg) {
 	this->inhibitOwners[name].clear();
 }
 
-void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {	
+void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
 	if (this->monitor || std::string(msg->destination()) != INTERFACE) return;
 
 	const char* introspectXml = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
