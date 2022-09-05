@@ -32,4 +32,4 @@ build/%.o: src/%.cpp
 	$(CXX) -fPIC -MMD -c $(INCLUDE) $(LIBINCLUDE) $< -o $@
 
 clean:
-	rm -rf build/*
+	rm -rf build/
