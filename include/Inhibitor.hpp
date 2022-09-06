@@ -11,6 +11,7 @@
 #include <atomic>
 #include <mutex>
 #include <coroutine>
+#include <thread>
 
 namespace uinhibit {
 	class InhibitRequestUnsupportedTypeException : std::exception {};
@@ -123,6 +124,7 @@ namespace uinhibit {
 			DBusInhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
 										std::function<void(Inhibitor*, Inhibit)> unInhibitCB,
 										std::string interface,
+										DBusBusType busType,
 										std::vector<DBusMethodCB> myMethods,
 										std::vector<DBusSignalCB> mySignals);
 
@@ -136,6 +138,8 @@ namespace uinhibit {
 
 			std::map<uint32_t, DBus::Message> methodCalls; // serial, message
 			std::string interface;
+
+			virtual void poll() = 0;
 	};
 
 	// TODO exception if a suspend inhibit is requested
@@ -164,6 +168,8 @@ namespace uinhibit {
 
 			Inhibit doInhibit(InhibitRequest r) override;
 			void doUnInhibit(InhibitID id) override;
+
+			void poll() override {};
 	};
 
 
@@ -195,12 +201,14 @@ namespace uinhibit {
 
 
 			void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit);
+
+			void poll() override {};
 	};
 
 	class GnomeSessionManagerInhibitor : public DBusInhibitor {
 		public:
 			GnomeSessionManagerInhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
-																				std::function<void(Inhibitor*, Inhibit)> unInhibitCB);
+																	 std::function<void(Inhibitor*, Inhibit)> unInhibitCB);
 		protected:
 			struct _InhibitID {
 				uint64_t instanceID;
@@ -240,6 +248,8 @@ namespace uinhibit {
 			Inhibit doInhibit(InhibitRequest r) override;
 			void doUnInhibit(InhibitID id) override;
 
+			void poll() override {};
+
 		private:
 			InhibitType gnomeType2us(GnomeInhibitType t);
       GnomeInhibitType us2gnomeType(InhibitType us);
@@ -248,15 +258,51 @@ namespace uinhibit {
 			Inhibit* inhibitFromCookie(uint32_t cookie); // throws InhibitNotFoundException
 	};
 
+	class SystemdInhibitor : public DBusInhibitor {
+		public:
+			SystemdInhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
+											 std::function<void(Inhibitor*, Inhibit)> unInhibitCB);
+		protected:
+			struct _InhibitID {
+				uint64_t instanceID;
+				uint32_t fd;
+			};
+
+			void handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg);
+			void handleIntrospect(DBus::Message* msg, DBus::Message* retmsg);
+
+			void handleInhibitEvent(Inhibit inhibit) override {};
+			void handleUnInhibitEvent(Inhibit inhibit) override {};
+			void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) override {};
+			Inhibit doInhibit(InhibitRequest r) override;
+			void doUnInhibit(InhibitID id) override;
+			void poll() override;
+
+		private:
+			void releaseThread(const char* path, Inhibit in);
+			void releaseThreadOurFd(int32_t fd, std::string path, Inhibit in);
+			InhibitID mkId(uint32_t fd);
+			InhibitType systemdType2us(std::string what);	
+
+			struct lockRef {
+				int32_t rfd = -1;
+				int32_t wfd = -1;
+				std::string file;
+			};
+
+			lockRef newLockRef();
+
+			uint64_t lastLockRef = 0;
+
+			std::mutex releaseQueueMutex;	
+			std::vector<Inhibit> releaseQueue;
+	};
+
 	class GnomeScreenSaverInhibitor : public Inhibitor {
 		// TODO
 	};
 
-	class SystemdInhibitor : public Inhibitor {
-		// TODO
-	};
-
-	class LinuxInhibitor : public Inhibitor {
+	class LinuxKernelInhibitor : public Inhibitor {
 		// TODO
 	};
 
@@ -267,5 +313,6 @@ namespace uinhibit {
 	// wayland inhibit
 	// xscreensaver inhibit?
 	// XFCE inhibit
-	// freedesktop portal
+	// org.freedesktop.portal.Inhibit xdg-desktop-portal - integration for sandboxed apps?
+	// sxmo?
 }

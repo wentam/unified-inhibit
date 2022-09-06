@@ -15,12 +15,13 @@ namespace uinhibit {
 		std::function<void(Inhibitor*, Inhibit)> inhibitCB,
 		std::function<void(Inhibitor*, Inhibit)> unInhibitCB,
 		std::string interface,
+		DBusBusType busType,
 		std::vector<DBusMethodCB> myMethods,
 		std::vector<DBusSignalCB> mySignals
 	) 
 	: 
 		Inhibitor(inhibitCB, unInhibitCB),
-		dbus(DBUS_BUS_SESSION),
+		dbus(busType),
 		myMethods(myMethods),
 		mySignals(mySignals),
 		interface(interface)
@@ -55,16 +56,27 @@ namespace uinhibit {
 				dbus.becomeMonitor(Crules);
 
 				printf("%s[" ANSI_COLOR_YELLOW "-" ANSI_COLOR_RESET "]: Someone "
-							 "else has this dbus interface implemented. Attempting to eavesdrop/act as a dbus "
-							 "monitor\n", interface.c_str());
+							 "else has this dbus interface implemented. Became a monitor and will eavesdrop.\n",
+							 interface.c_str());
 			} catch (DBus::UnknownInterfaceError& e) {
 				printf("%s[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "]: "
-							 "Someone else has this dbus interface implemented. We tried to become a monitor in"
+							 "UNSUPPORTED: Someone else has this dbus interface implemented. Tried to become a monitor in"
 							 " order to eavesdrop but your dbus daemon doesn't appear to support that (it's "
 							 "probably too old).\n", interface.c_str());
+			} catch (DBus::AccessDeniedError& e) {
+				printf("%s[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "]: "
+							 "ACCESS DENIED: Someone else has this dbus interface implemented. Tried to become a monitor to"
+							 " eavesdrop but was denied access. \n", interface.c_str());
 			}
 		} else {
-			int ret = dbus.requestName(interface.c_str(), DBUS_NAME_FLAG_REPLACE_EXISTING);
+			int ret = 0;
+
+			try {
+				ret = dbus.requestName(interface.c_str(), DBUS_NAME_FLAG_REPLACE_EXISTING);
+			} catch (const DBus::AccessDeniedError& e) {
+				printf("%s[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "]: ACCESS DENIED: We tried to implement this interface but dbus denied our name request\n", interface.c_str());
+				return;
+			}
 
 			if (ret != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
 				printf("%s[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "]: Need to "
@@ -87,7 +99,7 @@ namespace uinhibit {
 
 	Inhibitor::ReturnObject DBusInhibitor::start() {
 		while(1) try {
-			dbus.readWriteDispatch(100);
+			dbus.readWriteDispatch(40);
 			while (1) try {
 				auto msg = dbus.popMessage();
 				if (msg.isNull()) break;
@@ -132,9 +144,10 @@ namespace uinhibit {
 				// TODO should we respond to the bad request in some way in this situation? Some apps
 				// could hang waiting for a response.
 			}
+			this->poll();
 			co_await std::suspend_always();
 		}
-		catch (std::exception &e) { printf("Exception: %s\n", e.what()); }
+		catch (std::exception &e) { printf("Unhandled exception: %s\n", e.what()); }
 		catch (...) { std::terminate(); }
 	}
 }; // End namespace uinhibit

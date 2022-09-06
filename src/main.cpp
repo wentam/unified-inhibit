@@ -2,6 +2,7 @@
 #include "Inhibitor.hpp"
 #include <thread>
 #include <mutex>
+#include "util.hpp"
 
 // TODO
 // * command line argument to disable specific inhibitors
@@ -33,7 +34,6 @@ const char* func2 = NULL;
 static std::vector<Inhibitor*> inhibitors;
 static InhibitType lastInhibitType = InhibitType::NONE;
 static std::map<InhibitID, std::vector<std::pair<Inhibitor*, InhibitID>>> releasePlan;
-
 
 static InhibitType inhibited() {
 	InhibitType i = InhibitType::NONE;
@@ -91,16 +91,64 @@ static void unInhibitCB(Inhibitor* inhibitor, Inhibit inhibit) {
 	printInhibited();
 }
 
+static std::string cleanDisplayEnv(std::string display) {
+	std::string cleanDisplay;
+	uint32_t i = 0;
+	for (auto c : display) { 
+		if (isdigit(c) || (c == ':' && i == 0)) cleanDisplay.push_back(c); 
+		i++;
+	}
+
+	return cleanDisplay;
+}
+
 int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
+	// Security: We might be setuid. Clean up environment.
+	const char* sessionBusEnv = getenv("DBUS_SESSION_BUS_ADDRESS");
+	const char* display = getenv("DISPLAY");
+	std::string cleanDisplay = "";
+	if (display != NULL) cleanDisplay = cleanDisplayEnv(display);
+
+	if (clearenv() != 0) { printf("Failed to clear environment\n"); exit(1); }
+
+	setenv("DISPLAY", cleanDisplay.c_str(), 0);
+	setenv("DBUS_SESSION_BUS_ADDRESS", sessionBusEnv, 0);
+
+	// D-Bus tries to prevent usage of setuid binaries by checking if euid != ruid.
+	// We need setuid, but we can just set both euid *and* ruid to root to get our root stuff done,
+	// then switch to our user for the rest.
+	//
+	// Can't go back to root after that, but this covers our needs.
+	auto ruid = getuid();
+
+	// D-Bus inhibitors that need the system bus should be constructed as root
+	// ---------------------------- SETUID ROOT --------------------------
+	if (setresuid(0,0,0) != 0) {
+		// All good, we just might get access denied depending on user config.
+	}
+
+	// Security note: we're root, always ensure these constructors are safe and don't touch raw
+	// user input in any way. Our user input may be unprivileged.
+	uinhibit::SystemdInhibitor i4(inhibitCB, unInhibitCB); inhibitors.push_back(&i4);	
+
+	// D-Bus inhibitors that need the session bus should be constructed as the user
+	if (setresuid(ruid,ruid,ruid) != 0) { printf("Failed to drop privileges\n"); exit(1); }
+	if (getuid() != ruid) exit(1); // Should never happen
+	// ---------------------------- SETUID SAFE --------------------------
+
+	// Parse args/user input
 	if (argc > 2) {
 		func1 = argv[1];
 		func2 = argv[2];
 	}
 
-  uinhibit::FreedesktopScreenSaverInhibitor i1(inhibitCB, unInhibitCB); inhibitors.push_back(&i1);
+	uinhibit::FreedesktopScreenSaverInhibitor i1(inhibitCB, unInhibitCB); inhibitors.push_back(&i1);
 	uinhibit::FreedesktopPowerManagerInhibitor i2(inhibitCB, unInhibitCB); inhibitors.push_back(&i2);
 	uinhibit::GnomeSessionManagerInhibitor i3(inhibitCB, unInhibitCB); inhibitors.push_back(&i3);
-	
+
+	// Run inhibitors
+	// Security note: it is critical we have dropped privileges before this point, as we will be
+	// running user-inputted commands.
 	std::vector<Inhibitor::ReturnObject> ros;
 	for (auto& inhibitor : inhibitors) ros.push_back(inhibitor->start());
 	while(1) for (auto& r : ros) {r.handle.resume(); fflush(stdout); }
