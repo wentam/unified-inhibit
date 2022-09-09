@@ -4,28 +4,47 @@
 #include "util.hpp"
 #include <cstring>
 
-#define THIS FreedesktopScreenSaverInhibitor
+#define THIS SimpleDBusInhibitor
 #define METHOD_CAST (void (DBusInhibitor::*)(DBus::Message* msg, DBus::Message* retmsg))
 #define SIGNAL_CAST (void (DBusInhibitor::*)(DBus::Message* msg))
-#define INTERFACE "org.freedesktop.ScreenSaver"
 #define DBUS_INTERFACE "org.freedesktop.DBus"
 #define INTROSPECT_INTERFACE "org.freedesktop.DBus.Introspectable"
-#define PATH "/ScreenSaver"
 
 using namespace uinhibit;
 
+template<typename T>
+static std::vector<T> catVec(std::vector<T> a, std::vector<T> b) {
+		std::vector c(a);
+		c.insert(c.end(), a.begin(), a.end());
+		return c;
+};
+
 THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
-					 std::function<void(Inhibitor*, Inhibit)> unInhibitCB)
+					 std::function<void(Inhibitor*, Inhibit)> unInhibitCB,
+					 std::vector<DBusMethodCB> myMethods,
+					 std::vector<DBusSignalCB> mySignals,
+					 std::string interface,
+					 std::string path,
+					 InhibitType inhibitType)
 	: DBusInhibitor
-		(inhibitCB, unInhibitCB, INTERFACE, DBUS_BUS_SESSION,
+		(inhibitCB, unInhibitCB, interface, DBUS_BUS_SESSION,
+		 catVec<DBusMethodCB>(
 		 {
-			 {INTERFACE, "Inhibit", METHOD_CAST &THIS::handleInhibitMsg, "*"},
-			 {INTERFACE, "UnInhibit", METHOD_CAST &THIS::handleUnInhibitMsg, "*"},
-			 {INTROSPECT_INTERFACE, "Introspect", METHOD_CAST &THIS::handleIntrospect, INTERFACE}
-		 },
+			 {interface, "Inhibit", METHOD_CAST &THIS::handleInhibitMsg, "*"},
+			 {interface, "UnInhibit", METHOD_CAST &THIS::handleUnInhibitMsg, "*"},
+			 {INTROSPECT_INTERFACE, "Introspect", METHOD_CAST &THIS::handleIntrospect, interface}
+		 }, myMethods),
+		 catVec<DBusSignalCB>(
 		 {
 			 {DBUS_INTERFACE, "NameOwnerChanged", SIGNAL_CAST &THIS::handleNameLostMsg}
-		 }){}
+		 }, mySignals)),
+		interface(interface),
+		path(path),
+		inhibitType(inhibitType)
+{
+	// Remove any leading / from path	
+	if (this->path.size() > 0 && this->path.front() == '/') this->path.erase(0,1);
+}
 
 void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
 	const char* appname; const char* reason;
@@ -37,7 +56,7 @@ void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
 	else msg->newMethodReturn().appendArgs(DBUS_TYPE_UINT32, &cookie, DBUS_TYPE_INVALID)->send();
 
 	// Create/register our new inhibit
-	Inhibit in = {InhibitType::SCREENSAVER, appname, reason, this->mkId(msg->sender(), cookie)};
+	Inhibit in = {this->inhibitType, appname, reason, this->mkId(msg->sender(), cookie)};
 	this->registerInhibit(in);
 
 	// Track inhibit owner to allow unInhibit on crash
@@ -61,21 +80,22 @@ void THIS::handleNameLostMsg(DBus::Message* msg) {
 }
 
 void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
-	if (this->monitor || std::string(msg->destination()) != INTERFACE) return;
+	if (this->monitor || std::string(msg->destination()) != this->interface) return;
 
 	if (std::string(msg->path()) == "/")  {
-		const char* introspectXml = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
+		std::string xml = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
 			"<node name='/'>"
-			"  <node name='ScreenSaver' />"
+			"  <node name='"+this->path+"' />"
 			"</node>";
 
+		const char* introspectXml	= xml.c_str();
 		msg->newMethodReturn().appendArgs(DBUS_TYPE_STRING,&introspectXml,DBUS_TYPE_INVALID)->send();
 	} 
 
-	if (std::string(msg->path()) == "/ScreenSaver")  {
-		const char* introspectXml = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
-			"<node name='ScreenSaver'>"
-			"  <interface name=\"org.freedesktop.ScreenSaver\">"
+	if (std::string(msg->path()) == "/"+this->path)  {
+		std::string xml = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
+			"<node name='"+this->path+"'>"
+			"  <interface name=\""+this->interface+"\">"
 			"    <method name='Inhibit'>"
 			"      <arg name='application_name' type='s' direction='in'/>"
 			"      <arg name='reason_for_inhibit' type='s' direction='in'/>"
@@ -87,12 +107,13 @@ void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
 			"  </interface>"
 			"</node>";
 
+		const char* introspectXml	= xml.c_str();
 		msg->newMethodReturn().appendArgs(DBUS_TYPE_STRING,&introspectXml,DBUS_TYPE_INVALID)->send();
 	}
 }
 
 Inhibit THIS::doInhibit(InhibitRequest r) {
-	if ((r.type & InhibitType::SCREENSAVER) == InhibitType::NONE)
+	if ((r.type & this->inhibitType) == InhibitType::NONE)
 		throw uinhibit::InhibitRequestUnsupportedTypeException();
 	uint32_t cookie = 0;
 	if (this->monitor) {
@@ -100,7 +121,7 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 		const char* reason = r.reason.c_str();
 
 		try {
-			auto replymsg = dbus.newMethodCall(INTERFACE, PATH, INTERFACE, "Inhibit")
+			auto replymsg = callDbus->newMethodCall(this->interface.c_str(), ("/"+this->path).c_str(), this->interface.c_str(), "Inhibit")
 				.appendArgs(DBUS_TYPE_STRING, &appname, 
 										DBUS_TYPE_STRING, &reason, DBUS_TYPE_INVALID)
 				->sendAwait(500);
@@ -112,7 +133,7 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 		cookie = ++this->lastCookie;
 	}
 
-	Inhibit i = {InhibitType::SCREENSAVER, r.appname, r.reason, {}}; 
+	Inhibit i = {this->inhibitType, r.appname, r.reason, {}}; 
 	i.id = this->mkId("us", cookie);
 	return i;
 }
@@ -120,7 +141,7 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 void THIS::doUnInhibit(InhibitID id) {
 	auto idStruct = reinterpret_cast<_InhibitID*>(&id[0]);
 	if (this->monitor) {
-		dbus.newMethodCall(INTERFACE, PATH, INTERFACE, "UnInhibit")
+		callDbus->newMethodCall(this->interface.c_str(), ("/"+this->path).c_str(), this->interface.c_str(), "UnInhibit")
 			  .appendArgs(DBUS_TYPE_UINT32, &(idStruct->cookie), DBUS_TYPE_INVALID)
 			  ->send();
 	}

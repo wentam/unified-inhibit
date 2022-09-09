@@ -277,8 +277,8 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 		uint32_t flags = (uint32_t)us2gnomeType(r.type);
 
 		try {
-			auto replymsg = dbus
-				.newMethodCall(INTERFACE, PATH, INTERFACE, "Inhibit")
+			auto replymsg = callDbus
+				->newMethodCall(INTERFACE, PATH, INTERFACE, "Inhibit")
 				.appendArgs(DBUS_TYPE_STRING, &appname, 
 										DBUS_TYPE_UINT32, &zero,
 										DBUS_TYPE_STRING, &reason, 
@@ -301,7 +301,7 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 void THIS::doUnInhibit(InhibitID id) {
 	auto idStruct = reinterpret_cast<_InhibitID*>(&id[0]);
 	if (this->monitor) {
-		dbus.newMethodCall(INTERFACE, PATH, INTERFACE, "UnInhibit")
+		callDbus->newMethodCall(INTERFACE, PATH, INTERFACE, "UnInhibit")
 			  .appendArgs(DBUS_TYPE_UINT32, &(idStruct->cookie), DBUS_TYPE_INVALID)
 			  ->send();
 	}

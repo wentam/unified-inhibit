@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <functional>
+#include <cstring>
 
 // Thin libdbus wrapper
 //
@@ -18,9 +19,15 @@ class DBus {
 
 		class Error : public Exception {
 			public:
-				Error(const char* message) : message(message) {};
+				Error(const char* msg) {
+					this->message = (char*)malloc(strlen(msg));	
+					strcpy(this->message, msg);
+				};
+				~Error() {
+					if (this->message != nullptr) free(this->message);
+				};
 				const char* what() const throw() override { return message; };
-				const char* message;
+				char* message;
 		};
 
     // DBUS_ERROR_FAILED 
@@ -141,6 +148,8 @@ class DBus {
 				const char* interface();
 				const char* member();
 				const char* path();
+				uint32_t senderPID();
+				uint32_t senderUID();
 				uint32_t serial();
 				uint32_t replySerial();
 				Message newMethodReturn();
@@ -157,6 +166,7 @@ class DBus {
 
 		DBus(DBusBusType type);
 		~DBus();
+		void reconnect();
 		bool nameHasOwner(const char* name);
 		int32_t requestName(const char* name, uint32_t flags);
 		void addMatch(const char* rule);
@@ -177,4 +187,5 @@ class DBus {
 
 		DBusConnection* conn;
 		DBusError err;
+		DBusBusType type;
 };

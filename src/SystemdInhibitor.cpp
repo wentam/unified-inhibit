@@ -25,12 +25,13 @@ namespace cpoll {
 
 using namespace uinhibit;
 
-THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB, 
+THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
 					 std::function<void(Inhibitor*, Inhibit)> unInhibitCB)
 	: DBusInhibitor
 		(inhibitCB, unInhibitCB, DBUSNAME, DBUS_BUS_SYSTEM,
 		 {
 			 {INTERFACE, "Inhibit", METHOD_CAST &THIS::handleInhibitMsg, "*"},
+			 {INTERFACE, "ListInhibitors", METHOD_CAST &THIS::handleListInhibitorsMsg, "*"},
 			 {INTROSPECT_INTERFACE, "Introspect", METHOD_CAST &THIS::handleIntrospect, INTERFACE}
 		 },
 		 {}){}
@@ -47,7 +48,6 @@ void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
 		msg->newMethodReturn().appendArgs(DBUS_TYPE_STRING,&introspectXml,DBUS_TYPE_INVALID)->send();
 	}
 
-
 	if (std::string(msg->path()) == "/org/freedesktop/login1")  {
 		const char* introspectXml = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
 			"<node name='org/freedesktop/login1'>"
@@ -59,11 +59,70 @@ void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
 			"      <arg name='mode' type='s' direction='in'/>"
 			"      <arg name='fd' type='h' direction='out'/>"
 			"    </method>"
+			"    <method name='ListInhibitors'>"
+			"      <arg name='inhibitor_list' type='a(ssssuu)' direction='out'/>"
+			"    </method>"
 			"  </interface>"
 			"</node>";
 
 		msg->newMethodReturn().appendArgs(DBUS_TYPE_STRING,&introspectXml,DBUS_TYPE_INVALID)->send();
 	}
+}
+
+void THIS::handleListInhibitorsMsg(DBus::Message* msg, DBus::Message* retmsg) {
+	if (this->monitor) return;
+	printf("Got call\n");
+
+	struct Minhibitor {
+		const char* what;
+		const char* who;
+		const char* why;
+		const char* mode;
+		uint32_t pid;
+		uint32_t uid;
+	};
+
+	std::vector<Minhibitor> list;
+	for (auto& [id, in] : this->activeInhibits) {
+		std::string whatstr = us2systemdType(in.type);
+
+		Minhibitor mmin = {
+			.what = whatstr.c_str(),
+			.who = in.appname.c_str(),
+			.why = in.reason.c_str(),
+			.mode = "block", // TODO support lock expiry?
+			.pid = this->pidUids[id].pid,
+			.uid = this->pidUids[id].uid,
+		};
+
+		list.push_back(mmin);
+	}
+
+	// TODO abstract this properly in DBus wrapper
+	auto ret = msg->newMethodReturn();
+	auto mmsg = ret.msg.get()->msg;
+
+	DBusMessageIter iter;
+	dbus_message_iter_init_append(mmsg, &iter);
+
+	DBusMessageIter arrayIter;
+	dbus_message_iter_open_container(&iter, DBUS_TYPE_ARRAY, "(ssssuu)", &arrayIter);
+
+	for (auto min : list) {
+		DBusMessageIter structIter;
+		dbus_message_iter_open_container(&arrayIter, DBUS_TYPE_STRUCT, NULL, &structIter);
+		dbus_message_iter_append_basic(&structIter, DBUS_TYPE_STRING, &(min.what));
+		dbus_message_iter_append_basic(&structIter, DBUS_TYPE_STRING, &(min.who));
+		dbus_message_iter_append_basic(&structIter, DBUS_TYPE_STRING, &(min.why));
+		dbus_message_iter_append_basic(&structIter, DBUS_TYPE_STRING, &(min.mode));
+		dbus_message_iter_append_basic(&structIter, DBUS_TYPE_UINT32, &(min.uid));
+		dbus_message_iter_append_basic(&structIter, DBUS_TYPE_UINT32, &(min.pid));
+		dbus_message_iter_close_container(&arrayIter, &structIter);
+	}
+
+	dbus_message_iter_close_container(&iter, &arrayIter);
+
+	ret.send();
 }
 
 void THIS::releaseThread(const char* path, Inhibit in) {
@@ -88,7 +147,10 @@ void THIS::releaseThreadOurFd(int32_t fd, std::string path, Inhibit in) {
 	};
 	cpoll::poll(&pollfd, 1, -1);
 	unlink(path.c_str());
-	this->releaseQueue.push_back(in);
+	{
+		std::unique_lock<std::mutex> lk(this->releaseQueueMutex);
+		this->releaseQueue.push_back(in);
+	}
 }
 
 void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
@@ -116,12 +178,17 @@ void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
 		t.detach();
 	} else {
 		auto lockRef = this->newLockRef();
+		auto id = this->mkId(lockRef.wfd);
+
+		try {
+			this->pidUids[id] = { .pid = msg->senderPID(), .uid = msg->senderUID() };
+		} catch (DBus::NameHasNoOwnerError& e) {}
 
 		msg->newMethodReturn().appendArgs(DBUS_TYPE_UNIX_FD, &lockRef.wfd, DBUS_TYPE_INVALID)->send();
 
 		close(lockRef.wfd); // Close our end so we can watch for EOF on release
 
-		Inhibit in = { this->systemdType2us(what), who, why, this->mkId(lockRef.wfd) };
+		Inhibit in = { this->systemdType2us(what), who, why, id };
 		this->registerInhibit(in);
 
 		std::thread t(&THIS::releaseThreadOurFd, this, lockRef.rfd, lockRef.file, in);
@@ -146,6 +213,7 @@ void THIS::poll() {
 	std::unique_lock<std::mutex> lk(this->releaseQueueMutex);
 
 	for (auto r : this->releaseQueue) {
+		if (this->pidUids.contains(r.id)) this->pidUids.erase(r.id);
 		this->registerUnInhibit(r.id);
 	}
 
@@ -158,14 +226,16 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 
 	int32_t fd = -1;
 	if (this->monitor) {
-		// TODO us2systemdType
-		const char* what = "idle";
+		std::string whatstr = us2systemdType(r.type);
+		const char* what = whatstr.c_str();
 		const char* who = r.appname.c_str();
 		const char* why = r.reason.c_str();
+
+		// TODO support lock expirey?
 		const char* mode = "block";
 		try {
-			auto replymsg = dbus
-				.newMethodCall("org.freedesktop.login1", PATH, "org.freedesktop.login1.Manager", "Inhibit")
+			auto replymsg = callDbus
+				->newMethodCall(DBUSNAME, PATH, INTERFACE, "Inhibit")
 				.appendArgs(DBUS_TYPE_STRING, &what,
 										DBUS_TYPE_STRING, &who,
 										DBUS_TYPE_STRING, &why,
@@ -174,6 +244,7 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 				->sendAwait(500);
 			if(replymsg.notNull()) replymsg.getArgs(DBUS_TYPE_UNIX_FD, &fd, DBUS_TYPE_INVALID);
 		} catch (DBus::NoReplyError& e) {
+ 			//printf("No response: %s\n", e.what());
 			throw InhibitNoResponseException();
 		}
 	} else {
@@ -226,4 +297,13 @@ InhibitType THIS::systemdType2us(std::string what) {
 	}
 
 	return t;
+}
+
+std::string THIS::us2systemdType(InhibitType t) {
+	std::string s = "";
+
+	if (t == InhibitType::SCREENSAVER) s = "";
+	if (t == InhibitType::SUSPEND) s = "idle";
+
+	return s;
 }

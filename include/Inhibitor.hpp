@@ -131,6 +131,11 @@ namespace uinhibit {
 			ReturnObject start() override;
 		protected:
 			DBus dbus;
+			std::unique_ptr<DBus> callDbus; // We're not permitted to send messages when in monitoring 
+																			// mode. As such, in monitoring mode this connection will be
+																			// defined for that purpose.
+																			//
+																			// Undefined when not in monitoring mode.
 			bool monitor;
 
 			std::vector<DBusMethodCB> myMethods;
@@ -142,11 +147,22 @@ namespace uinhibit {
 			virtual void poll() = 0;
 	};
 
-	// TODO exception if a suspend inhibit is requested
-	class FreedesktopScreenSaverInhibitor : public DBusInhibitor {
+	// Multiple inhibitors share this common base interface:
+	// Inhibit(appname, reason) -> cookie
+	// UnInhibit(cookie)
+	//
+	// Always producing strictly one type of inhibit.
+	//
+	// This implements that common interface.
+	class SimpleDBusInhibitor : public DBusInhibitor {
 		public:
-			FreedesktopScreenSaverInhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
-																			std::function<void(Inhibitor*, Inhibit)> unInhibitCB);
+			SimpleDBusInhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
+													std::function<void(Inhibitor*, Inhibit)> unInhibitCB,
+													std::vector<DBusMethodCB> myMethods,
+													std::vector<DBusSignalCB> mySignals,
+													std::string interface,
+													std::string path,
+													InhibitType inhibitType);
 		protected:
 			struct _InhibitID {
 				uint64_t instanceID;
@@ -170,9 +186,32 @@ namespace uinhibit {
 			void doUnInhibit(InhibitID id) override;
 
 			void poll() override {};
+
+		private:
+			std::string interface;
+			std::string path;
+			InhibitType inhibitType;
 	};
 
+	class FreedesktopScreenSaverInhibitor : public SimpleDBusInhibitor {	
+		public:
+			FreedesktopScreenSaverInhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
+																			std::function<void(Inhibitor*, Inhibit)> unInhibitCB) :
+				SimpleDBusInhibitor(inhibitCB, unInhibitCB, {}, {},
+														"org.freedesktop.ScreenSaver",
+														"/ScreenSaver",
+														InhibitType::SCREENSAVER) {};
+	};
 
+	class GnomeScreenSaverInhibitor : public SimpleDBusInhibitor {	
+		public:
+			GnomeScreenSaverInhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
+																			std::function<void(Inhibitor*, Inhibit)> unInhibitCB) :
+				SimpleDBusInhibitor(inhibitCB, unInhibitCB, {}, {}, 
+														"org.gnome.ScreenSaver",
+														"/org/gnome/ScreenSaver",
+														InhibitType::SCREENSAVER) {};
+	};
 
 	class FreedesktopPowerManagerInhibitor : public DBusInhibitor {
 		public:
@@ -238,7 +277,6 @@ namespace uinhibit {
 			void handleGetReason(DBus::Message* msg, DBus::Message* retmsg);
 			void handleGetFlags(DBus::Message* msg, DBus::Message* retmsg);
 
-
 			std::map<std::string, std::vector<InhibitID>> inhibitOwners; // sender, {ids}
 			uint32_t lastCookie = 0;
 
@@ -270,6 +308,7 @@ namespace uinhibit {
 
 			void handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg);
 			void handleIntrospect(DBus::Message* msg, DBus::Message* retmsg);
+			void handleListInhibitorsMsg(DBus::Message* msg, DBus::Message* retmsg);
 
 			void handleInhibitEvent(Inhibit inhibit) override {};
 			void handleUnInhibitEvent(Inhibit inhibit) override {};
@@ -283,6 +322,7 @@ namespace uinhibit {
 			void releaseThreadOurFd(int32_t fd, std::string path, Inhibit in);
 			InhibitID mkId(uint32_t fd);
 			InhibitType systemdType2us(std::string what);	
+			std::string us2systemdType(InhibitType t);
 
 			struct lockRef {
 				int32_t rfd = -1;
@@ -296,17 +336,20 @@ namespace uinhibit {
 
 			std::mutex releaseQueueMutex;	
 			std::vector<Inhibit> releaseQueue;
+
+			struct PidUid {
+				uint32_t pid;
+				uint32_t uid;
+			};
+
+			std::map<InhibitID, PidUid> pidUids;
 	};
 
-	class GnomeScreenSaverInhibitor : public Inhibitor {
+	class CinnamonScreenSaverInhibitor : public Inhibitor {
 		// TODO
 	};
 
 	class LinuxKernelInhibitor : public Inhibitor {
-		// TODO
-	};
-
-	class CinnamonScreenSaverInhibitor : public Inhibitor {
 		// TODO
 	};
 

@@ -68,7 +68,9 @@ static void inhibitCB(Inhibitor* inhibitor, Inhibit inhibit) {
 		}
 	}
 	catch (uinhibit::InhibitRequestUnsupportedTypeException& e) {}
-	catch (uinhibit::InhibitNoResponseException& e) {}
+	catch (uinhibit::InhibitNoResponseException& e) { 
+		printf(ANSI_COLOR_YELLOW "Warning: no response to a dbus method call\n" ANSI_COLOR_RESET); 
+	}
 
 	// Output our global inhibit state to STDOUT if it's changed
 	printInhibited();
@@ -86,7 +88,9 @@ static void unInhibitCB(Inhibitor* inhibitor, Inhibit inhibit) {
 		}
 	}
 	catch (uinhibit::InhibitRequestUnsupportedTypeException& e) {}
-	catch (uinhibit::InhibitNoResponseException& e) {}
+	catch (uinhibit::InhibitNoResponseException& e) { 
+		printf(ANSI_COLOR_YELLOW "Warning: no response to a dbus method call\n" ANSI_COLOR_RESET); 
+	}
 	// Output our global inhibit state to STDOUT if it's changed
 	printInhibited();
 }
@@ -145,6 +149,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
 	uinhibit::FreedesktopScreenSaverInhibitor i1(inhibitCB, unInhibitCB); inhibitors.push_back(&i1);
 	uinhibit::FreedesktopPowerManagerInhibitor i2(inhibitCB, unInhibitCB); inhibitors.push_back(&i2);
 	uinhibit::GnomeSessionManagerInhibitor i3(inhibitCB, unInhibitCB); inhibitors.push_back(&i3);
+	uinhibit::GnomeScreenSaverInhibitor i5(inhibitCB, unInhibitCB); inhibitors.push_back(&i5);
 
 	// Run inhibitors
 	// Security note: it is critical we have dropped privileges before this point, as we will be

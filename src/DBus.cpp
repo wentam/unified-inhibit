@@ -2,10 +2,11 @@
 #include <stdexcept>
 #include <cstring>
 
-DBus::DBus(DBusBusType type) {
+DBus::DBus(DBusBusType type) : type(type) {
 	dbus_error_init(&err);
 	dbus_threads_init_default();
 	this->conn = dbus_bus_get_private(type, &err);
+	dbus_connection_set_exit_on_disconnect(this->conn, false);
 	this->throwErrAndFree();
 }
 
@@ -13,6 +14,15 @@ DBus::~DBus() {
 	dbus_connection_close(this->conn);
 	dbus_connection_unref(this->conn);
 };
+
+void DBus::reconnect() {
+	dbus_connection_close(this->conn);
+	dbus_connection_unref(this->conn);
+
+	this->conn = dbus_bus_get_private(type, &err);
+	dbus_connection_set_exit_on_disconnect(this->conn, false);
+	this->throwErrAndFree();
+}
 
 void DBus::throwErrAndFree() {
 	if (!dbus_error_is_set(&err)) return;
@@ -205,7 +215,6 @@ static DBusHandlerResult registerObjectPathFuncWrap(
 	DBusMessage *msg,
 	void *user_data
 ) {
-	printf("other yo\n");
 	UserDataWrap* data = (UserDataWrap*)(user_data);
 
 	auto ptr = std::shared_ptr<DBus::UniqueMessage>(new DBus::UniqueMessage(msg));
@@ -238,7 +247,6 @@ void DBus::registerObjectPath(
 	UserDataWrap s = {handler, this, userData};
 	wrappedUserData.push_back(s);
 
-	printf("registering it yo\n");
 	dbus_connection_try_register_object_path(this->conn, path, &vtable, &(wrappedUserData.back()), &err);
 	this->throwErrAndFree();
 };
@@ -286,6 +294,31 @@ const char* DBus::Message::path() {
 	return dbus_message_get_path(this->msg.get()->msg);
 };
 
+uint32_t DBus::Message::senderPID() {
+	const char* sender = this->sender();
+	auto retmsg = this->dbus
+		->newMethodCall(DBUS_SERVICE_DBUS, DBUS_PATH_DBUS, DBUS_SERVICE_DBUS, "GetConnectionUnixProcessID")
+		.appendArgs(DBUS_TYPE_STRING, &sender, DBUS_TYPE_INVALID)
+		->sendAwait(500);
+
+	uint32_t ret = 0;
+	retmsg.getArgs(DBUS_TYPE_UINT32, &ret, DBUS_TYPE_INVALID);
+	return ret;
+}
+
+
+uint32_t DBus::Message::senderUID() {
+	const char* sender = this->sender();
+	auto retmsg = this->dbus
+		->newMethodCall(DBUS_SERVICE_DBUS, DBUS_PATH_DBUS, DBUS_SERVICE_DBUS, "GetConnectionUnixUser")
+		.appendArgs(DBUS_TYPE_STRING, &sender, DBUS_TYPE_INVALID)
+		->sendAwait(500);
+
+	uint32_t ret = 0;
+	retmsg.getArgs(DBUS_TYPE_UINT32, &ret, DBUS_TYPE_INVALID);
+	return ret;
+}
+
 uint32_t DBus::Message::serial() {
 	return dbus_message_get_serial(this->msg.get()->msg);
 };
@@ -301,7 +334,7 @@ DBus::Message DBus::Message::newMethodReturn() {
 	return ret;
 };
 
-DBus::Message* DBus::Message::appendArgs(int32_t firstArgType, ...) {	
+DBus::Message* DBus::Message::appendArgs(int32_t firstArgType, ...) {
 	va_list args;
 	va_start(args, firstArgType);
 	dbus_message_append_args_valist(this->msg.get()->msg, firstArgType, args);

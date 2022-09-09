@@ -127,7 +127,7 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 		const char* reason = r.reason.c_str();
 
 		try {
-			auto replymsg = dbus.newMethodCall(INTERFACE, PATH, INTERFACE, "Inhibit")
+			auto replymsg = callDbus->newMethodCall(INTERFACE, PATH, INTERFACE, "Inhibit")
 				.appendArgs(DBUS_TYPE_STRING, &appname, 
 										DBUS_TYPE_STRING, &reason, DBUS_TYPE_INVALID)
 				->sendAwait(500);
@@ -147,7 +147,7 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 void THIS::doUnInhibit(InhibitID id) {
 	auto idStruct = reinterpret_cast<_InhibitID*>(&id[0]);
 	if (this->monitor) {
-		dbus.newMethodCall(INTERFACE, PATH, INTERFACE, "UnInhibit")
+		callDbus->newMethodCall(INTERFACE, PATH, INTERFACE, "UnInhibit")
 			  .appendArgs(DBUS_TYPE_UINT32, &(idStruct->cookie), DBUS_TYPE_INVALID)
 			  ->send();
 	}

@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include "util.hpp"
 #include "DBus.hpp"
+#include <cxxabi.h>
 
 // TODO: if we started in monitoring mode but the interface becomes no longer implemented,
 // we should probably take it over (implement at DBusInhibitor level)
@@ -29,6 +30,8 @@ namespace uinhibit {
 		this->monitor = dbus.nameHasOwner(interface.c_str());
 
 		if (this->monitor) {
+			this->callDbus = std::unique_ptr<DBus>(new DBus(busType));
+
 			try {
 				std::vector<std::string> rules;
 
@@ -97,6 +100,11 @@ namespace uinhibit {
 		}
 	}
 
+	static const char* currentExceptionTypeName() {
+		int status;
+		return abi::__cxa_demangle(abi::__cxa_current_exception_type()->name(), 0, 0, &status);
+	}
+
 	Inhibitor::ReturnObject DBusInhibitor::start() {
 		while(1) try {
 			dbus.readWriteDispatch(40);
@@ -147,7 +155,31 @@ namespace uinhibit {
 			this->poll();
 			co_await std::suspend_always();
 		}
-		catch (std::exception &e) { printf("Unhandled exception: %s\n", e.what()); }
+		catch (DBus::DisconnectedError& e) { 
+			printf(ANSI_COLOR_RED "DBus disconnection for interface %s. Trying to reconnect..." 
+						 ANSI_COLOR_RESET, this->interface.c_str());
+
+			// TODO: we need to re-set ourselves up (as in what the constructor does)
+			// note that this won't always work because some constructors need root,
+			// and by this point we are not and can't go back.
+
+			bool fail = false;
+			try {
+				dbus.reconnect();			
+			} catch (...) { fail = true; }
+
+			if (!fail) printf(ANSI_COLOR_GREEN "reconnected\n" ANSI_COLOR_RESET);
+			else printf(ANSI_COLOR_RED "failed. Stopping inhibitor\n" ANSI_COLOR_RESET);
+
+			if (fail) {
+				// TODO this situation seems to lead to segfault, possibly attempting to resume a returned
+				// coroutine
+				break;
+			}
+		}
+		catch (std::exception &e) { 
+			printf("Unhandled exception %s: %s\n", currentExceptionTypeName(), e.what());
+		}
 		catch (...) { std::terminate(); }
 	}
 }; // End namespace uinhibit
