@@ -15,7 +15,7 @@ using namespace uinhibit;
 template<typename T>
 static std::vector<T> catVec(std::vector<T> a, std::vector<T> b) {
 		std::vector c(a);
-		c.insert(c.end(), a.begin(), a.end());
+		c.insert(c.end(), b.begin(), b.end());
 		return c;
 };
 
@@ -25,7 +25,8 @@ THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
 					 std::vector<DBusSignalCB> mySignals,
 					 std::string interface,
 					 std::string path,
-					 InhibitType inhibitType)
+					 InhibitType inhibitType,
+					 std::string extraIntrospect)
 	: DBusInhibitor
 		(inhibitCB, unInhibitCB, interface, DBUS_BUS_SESSION,
 		 catVec<DBusMethodCB>(
@@ -40,7 +41,8 @@ THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
 		 }, mySignals)),
 		interface(interface),
 		path(path),
-		inhibitType(inhibitType)
+		inhibitType(inhibitType),
+		extraIntrospect(extraIntrospect)
 {
 	// Remove any leading / from path	
 	if (this->path.size() > 0 && this->path.front() == '/') this->path.erase(0,1);
@@ -51,12 +53,15 @@ void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
 	msg->getArgs(DBUS_TYPE_STRING, &appname, DBUS_TYPE_STRING, &reason, DBUS_TYPE_INVALID);
 
 	// Read monitored response or send reply
-	uint32_t cookie = ++this->lastCookie;
+	this->lastCookie++;
+	if (this->lastCookie == 0) this->lastCookie = 1;
+
+	uint32_t cookie = this->lastCookie;
 	if (retmsg != NULL) retmsg->getArgs(DBUS_TYPE_UINT32, &cookie, DBUS_TYPE_INVALID);
 	else msg->newMethodReturn().appendArgs(DBUS_TYPE_UINT32, &cookie, DBUS_TYPE_INVALID)->send();
 
 	// Create/register our new inhibit
-	Inhibit in = {this->inhibitType, appname, reason, this->mkId(msg->sender(), cookie)};
+	Inhibit in = {this->inhibitType, appname, reason, this->mkId(msg->sender(), cookie), time(NULL)};
 	this->registerInhibit(in);
 
 	// Track inhibit owner to allow unInhibit on crash
@@ -69,6 +74,7 @@ void THIS::handleUnInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
 	auto id = this->mkId(msg->sender(), cookie);
 	this->registerUnInhibit(id);
 
+	// TODO I don't think this is actually cleaning up properly
 	std::remove_if(inhibitOwners[msg->sender()].begin(), inhibitOwners[msg->sender()].end(),
 								 [&id](InhibitID eid) { return id == eid; });
 }
@@ -104,6 +110,7 @@ void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
 			"    <method name='UnInhibit'>"
 			"      <arg name='cookie' type='u' direction='in'/>"
 			"    </method>"
+			+this->extraIntrospect+
 			"  </interface>"
 			"</node>";
 
@@ -130,10 +137,13 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 			throw InhibitNoResponseException();
 		}	
 	} else {
-		cookie = ++this->lastCookie;
+		this->lastCookie++;
+		if (this->lastCookie == 0) this->lastCookie = 1;
+
+		cookie = this->lastCookie;
 	}
 
-	Inhibit i = {this->inhibitType, r.appname, r.reason, {}}; 
+	Inhibit i = {this->inhibitType, r.appname, r.reason, {}, time(NULL)}; 
 	i.id = this->mkId("us", cookie);
 	return i;
 }

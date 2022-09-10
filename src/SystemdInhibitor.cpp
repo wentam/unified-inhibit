@@ -165,7 +165,7 @@ void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
 		int32_t fd = -1;
 		retmsg->getArgs(DBUS_TYPE_UNIX_FD, &fd, DBUS_TYPE_INVALID);
 
-		Inhibit in = { this->systemdType2us(what), who, why, this->mkId(fd) };
+		Inhibit in = { this->systemdType2us(what), who, why, this->mkId(fd), time(NULL)};
 		this->registerInhibit(in);
 
 		char filePath[1024*10];
@@ -254,7 +254,7 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 	}
 
 	// TODO not hardcoded type
-	Inhibit i = {InhibitType::SUSPEND, r.appname, r.reason, {}};
+	Inhibit i = {InhibitType::SUSPEND, r.appname, r.reason, {}, time(NULL)};
 	i.id = this->mkId(fd);
 	return i;
 }

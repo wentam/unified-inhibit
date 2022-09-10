@@ -51,7 +51,7 @@ void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
 
 	// Create/register our new inhibit
 	InhibitType t = gnomeType2us((GnomeInhibitType)flags);
-	Inhibit in = {t, appname, reason, this->mkId(msg->sender(), cookie)};
+	Inhibit in = {t, appname, reason, this->mkId(msg->sender(), cookie), time(NULL)};
 	this->registerInhibit(in);	
 
 	// Track inhibit owner to allow unInhibit on crash
@@ -64,6 +64,7 @@ void THIS::handleUnInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
 	auto id = this->mkId(msg->sender(), cookie);
 	this->registerUnInhibit(id);
 
+	// TODO I don't think this is actually cleaning up properly
 	std::remove_if(inhibitOwners[msg->sender()].begin(), inhibitOwners[msg->sender()].end(),
 								 [&id](InhibitID eid) { return id == eid; });
 }
@@ -293,7 +294,7 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 		cookie = ++this->lastCookie;
 	}
 
-	Inhibit i = {gnomeType2us(us2gnomeType(r.type)), r.appname, r.reason, {}}; 
+	Inhibit i = {gnomeType2us(us2gnomeType(r.type)), r.appname, r.reason, {}, time(NULL)}; 
 	i.id = this->mkId("us", cookie);
 	return i;
 }

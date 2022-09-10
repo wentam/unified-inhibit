@@ -36,6 +36,7 @@ namespace uinhibit {
 
 	struct Inhibit : InhibitRequest {
 		InhibitID id;
+		uint64_t created = 0;
 	};
 
 	class Inhibitor {
@@ -162,7 +163,8 @@ namespace uinhibit {
 													std::vector<DBusSignalCB> mySignals,
 													std::string interface,
 													std::string path,
-													InhibitType inhibitType);
+													InhibitType inhibitType,
+													std::string extraIntrospect);
 		protected:
 			struct _InhibitID {
 				uint64_t instanceID;
@@ -178,19 +180,19 @@ namespace uinhibit {
 			std::map<std::string, std::vector<InhibitID>> inhibitOwners; // sender, {ids}
 			uint32_t lastCookie = 0;
 
-			void handleInhibitEvent(Inhibit inhibit) {};
-			void handleUnInhibitEvent(Inhibit inhibit) {};
-			void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) {};
+			void handleInhibitEvent(Inhibit inhibit) override {};
+			void handleUnInhibitEvent(Inhibit inhibit) override {};
+			void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) override {};
 
 			Inhibit doInhibit(InhibitRequest r) override;
 			void doUnInhibit(InhibitID id) override;
 
 			void poll() override {};
 
-		private:
 			std::string interface;
-			std::string path;
+			std::string path; // Will have any leading / removed
 			InhibitType inhibitType;
+			std::string extraIntrospect;
 	};
 
 	class FreedesktopScreenSaverInhibitor : public SimpleDBusInhibitor {	
@@ -200,48 +202,26 @@ namespace uinhibit {
 				SimpleDBusInhibitor(inhibitCB, unInhibitCB, {}, {},
 														"org.freedesktop.ScreenSaver",
 														"/ScreenSaver",
-														InhibitType::SCREENSAVER) {};
+														InhibitType::SCREENSAVER,
+														"") {};
 	};
 
 	class GnomeScreenSaverInhibitor : public SimpleDBusInhibitor {	
 		public:
 			GnomeScreenSaverInhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
-																			std::function<void(Inhibitor*, Inhibit)> unInhibitCB) :
-				SimpleDBusInhibitor(inhibitCB, unInhibitCB, {}, {}, 
-														"org.gnome.ScreenSaver",
-														"/org/gnome/ScreenSaver",
-														InhibitType::SCREENSAVER) {};
+																std::function<void(Inhibitor*, Inhibit)> unInhibitCB);
+		protected:
+			void handleSimActivityMsg(DBus::Message* msg, DBus::Message* retmsg);
+			void poll() override;
 	};
 
-	class FreedesktopPowerManagerInhibitor : public DBusInhibitor {
+	class FreedesktopPowerManagerInhibitor : public SimpleDBusInhibitor {
 		public:
 			FreedesktopPowerManagerInhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
 																			std::function<void(Inhibitor*, Inhibit)> unInhibitCB);
 		protected:
-			struct _InhibitID {
-				uint64_t instanceID;
-				char sender[1024];
-				uint32_t cookie;
-			};
-
-			void handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg);
-			void handleUnInhibitMsg(DBus::Message* msg, DBus::Message* retmsg);
 			void handleHasInhibitMsg(DBus::Message* msg, DBus::Message* retmsg);
-			void handleNameLostMsg(DBus::Message* msg);
-			void handleIntrospect(DBus::Message* msg, DBus::Message* retmsg);
-			InhibitID mkId(std::string sender, uint32_t cookie);
-			std::map<std::string, std::vector<InhibitID>> inhibitOwners; // sender, {ids}
-			uint32_t lastCookie = 0;
-
-			void handleInhibitEvent(Inhibit inhibit) {};
-			void handleUnInhibitEvent(Inhibit inhibit) {};
-			Inhibit doInhibit(InhibitRequest r) override;
-			void doUnInhibit(InhibitID id) override;
-
-
 			void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit);
-
-			void poll() override {};
 	};
 
 	class GnomeSessionManagerInhibitor : public DBusInhibitor {
@@ -345,8 +325,33 @@ namespace uinhibit {
 			std::map<InhibitID, PidUid> pidUids;
 	};
 
-	class CinnamonScreenSaverInhibitor : public Inhibitor {
-		// TODO
+	class CinnamonScreenSaverInhibitor : public DBusInhibitor {
+		public:
+			CinnamonScreenSaverInhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
+																	 std::function<void(Inhibitor*, Inhibit)> unInhibitCB);
+		protected:
+			struct _InhibitID {
+				uint64_t instanceID;
+				char sender[1024];
+			};	
+
+			void handleSimActivityMsg(DBus::Message* msg, DBus::Message* retmsg);
+			void handleNameLostMsg(DBus::Message* msg);
+			void handleIntrospect(DBus::Message* msg, DBus::Message* retmsg);
+			InhibitID mkId(std::string sender);
+			std::map<std::string, std::vector<InhibitID>> inhibitOwners; // sender, {ids}
+			uint32_t lastCookie = 0;
+
+			void handleInhibitEvent(Inhibit inhibit) override {};
+			void handleUnInhibitEvent(Inhibit inhibit) override {};
+			void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) override {};
+
+			// TODO: need to spawn a thread on doInhibit to constantly keep us alive with
+			// SimulateUserActivity requests
+			Inhibit doInhibit(InhibitRequest r) override {};
+			void doUnInhibit(InhibitID id) override {};
+
+			void poll() override;
 	};
 
 	class LinuxKernelInhibitor : public Inhibitor {

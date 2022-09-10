@@ -150,6 +150,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
 	uinhibit::FreedesktopPowerManagerInhibitor i2(inhibitCB, unInhibitCB); inhibitors.push_back(&i2);
 	uinhibit::GnomeSessionManagerInhibitor i3(inhibitCB, unInhibitCB); inhibitors.push_back(&i3);
 	uinhibit::GnomeScreenSaverInhibitor i5(inhibitCB, unInhibitCB); inhibitors.push_back(&i5);
+	uinhibit::CinnamonScreenSaverInhibitor i6(inhibitCB, unInhibitCB); inhibitors.push_back(&i6);
 
 	// Run inhibitors
 	// Security note: it is critical we have dropped privileges before this point, as we will be
