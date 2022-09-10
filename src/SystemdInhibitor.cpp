@@ -144,6 +144,7 @@ void THIS::releaseThreadOurFd(int32_t fd, std::string path, Inhibit in) {
 	struct cpoll::pollfd pollfd = {
 		.fd = fd,
 		.events = POLLIN,
+		.revents = 0
 	};
 	cpoll::poll(&pollfd, 1, -1);
 	unlink(path.c_str());
@@ -165,17 +166,19 @@ void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
 		int32_t fd = -1;
 		retmsg->getArgs(DBUS_TYPE_UNIX_FD, &fd, DBUS_TYPE_INVALID);
 
-		Inhibit in = { this->systemdType2us(what), who, why, this->mkId(fd), time(NULL)};
+		Inhibit in = { this->systemdType2us(what), who, why, this->mkId(fd), (uint64_t)time(NULL)};
 		this->registerInhibit(in);
 
 		char filePath[1024*10];
 		std::string fdpath = "/proc/self/fd/";
 		fdpath += std::to_string(fd);
-		readlink(fdpath.c_str(), filePath, 1024*10);
+		int rl = readlink(fdpath.c_str(), filePath, 1024*10);
 		close(fd);
 
-		std::thread t(&THIS::releaseThread, this, filePath, in);
-		t.detach();
+		if (rl >= 0) {
+			std::thread t(&THIS::releaseThread, this, filePath, in);
+			t.detach();
+		}
 	} else {
 		auto lockRef = this->newLockRef();
 		auto id = this->mkId(lockRef.wfd);
@@ -254,7 +257,7 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 	}
 
 	// TODO not hardcoded type
-	Inhibit i = {InhibitType::SUSPEND, r.appname, r.reason, {}, time(NULL)};
+	Inhibit i = {InhibitType::SUSPEND, r.appname, r.reason, {}, (uint64_t)time(NULL)};
 	i.id = this->mkId(fd);
 	return i;
 }

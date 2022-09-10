@@ -61,7 +61,13 @@ void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
 	else msg->newMethodReturn().appendArgs(DBUS_TYPE_UINT32, &cookie, DBUS_TYPE_INVALID)->send();
 
 	// Create/register our new inhibit
-	Inhibit in = {this->inhibitType, appname, reason, this->mkId(msg->sender(), cookie), time(NULL)};
+	Inhibit in = {
+		this->inhibitType,
+		appname,
+		reason,
+		this->mkId(msg->sender(), cookie),
+		(uint64_t)time(NULL)
+	};
 	this->registerInhibit(in);
 
 	// Track inhibit owner to allow unInhibit on crash
@@ -143,7 +149,7 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 		cookie = this->lastCookie;
 	}
 
-	Inhibit i = {this->inhibitType, r.appname, r.reason, {}, time(NULL)}; 
+	Inhibit i = {this->inhibitType, r.appname, r.reason, {}, (uint64_t)time(NULL)}; 
 	i.id = this->mkId("us", cookie);
 	return i;
 }

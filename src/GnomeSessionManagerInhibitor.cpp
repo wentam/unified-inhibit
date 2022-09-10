@@ -51,7 +51,7 @@ void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
 
 	// Create/register our new inhibit
 	InhibitType t = gnomeType2us((GnomeInhibitType)flags);
-	Inhibit in = {t, appname, reason, this->mkId(msg->sender(), cookie), time(NULL)};
+	Inhibit in = {t, appname, reason, this->mkId(msg->sender(), cookie),(uint64_t)time(NULL)};
 	this->registerInhibit(in);	
 
 	// Track inhibit owner to allow unInhibit on crash
@@ -108,7 +108,7 @@ void THIS::handleGetFlags(DBus::Message* msg, DBus::Message* retmsg) {
 	uint32_t flags = 0;
 	try {
 		uint32_t cookie = this->inhibitorPathToCookie(msg->path());	
-		uint32_t flags = us2gnomeType(this->inhibitFromCookie(cookie)->type);
+		flags = us2gnomeType(this->inhibitFromCookie(cookie)->type);
 	} catch (InhibitNotFoundException& e)  { 
 		printf(INTERFACE ": Caller requested information about non-existant inhibit.\n");
 		// TODO: does dbus have a way for us to return an error to the caller?
@@ -294,7 +294,7 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 		cookie = ++this->lastCookie;
 	}
 
-	Inhibit i = {gnomeType2us(us2gnomeType(r.type)), r.appname, r.reason, {}, time(NULL)}; 
+	Inhibit i = {gnomeType2us(us2gnomeType(r.type)), r.appname, r.reason, {}, (uint64_t)time(NULL)}; 
 	i.id = this->mkId("us", cookie);
 	return i;
 }

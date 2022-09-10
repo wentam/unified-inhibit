@@ -1,7 +1,7 @@
 INCLUDE = -Iinclude/ -I.
 LIBINCLUDE = -Iinclude/lib/
 .PHONY: docs multi build clean cleandocs lib sphinx doxygen depend configReader
-CXX = g++ -g -pipe -O2 -std=c++20 -pedantic -Wextra -Wall -Wno-maybe-uninitialized -Wno-unused-function -Wno-sign-compare -Wunused-result -fcoroutines
+CXX = g++ -g -pipe -O2 -std=c++20 -pedantic -Wextra -Wall -Wno-maybe-uninitialized -Wno-unused-function -Wno-sign-compare -Wno-unused-parameter -Wunused-result -fcoroutines
 
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 

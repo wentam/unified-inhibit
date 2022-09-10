@@ -30,7 +30,13 @@ THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
 void THIS::handleSimActivityMsg(DBus::Message* msg, DBus::Message* retmsg) {
 	// We treat this as an inhibit that expires in 5min
 	// We use a cookie of 0 to represent sim activity inhibits.
-	Inhibit i = {this->inhibitType, msg->sender(), "SimulateUserActivity", this->mkId(msg->sender(), 0), time(NULL)};
+	Inhibit i = {
+		this->inhibitType,
+		msg->sender(),
+		"SimulateUserActivity",
+		this->mkId(msg->sender(), 0),
+		(uint64_t)time(NULL)
+	};
 
 	// Clear any existing simActivity inhibits from this sender	
 	std::vector<InhibitID> eraseIDs;

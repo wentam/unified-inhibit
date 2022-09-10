@@ -348,7 +348,7 @@ namespace uinhibit {
 
 			// TODO: need to spawn a thread on doInhibit to constantly keep us alive with
 			// SimulateUserActivity requests
-			Inhibit doInhibit(InhibitRequest r) override {};
+			Inhibit doInhibit(InhibitRequest r) override { return {}; };
 			void doUnInhibit(InhibitID id) override {};
 
 			void poll() override;
