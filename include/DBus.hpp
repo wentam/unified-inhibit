@@ -169,6 +169,7 @@ class DBus {
 		void reconnect();
 		bool nameHasOwner(const char* name);
 		int32_t requestName(const char* name, uint32_t flags);
+		const char* getUniqueName();
 		void addMatch(const char* rule);
 		void readWrite(int32_t timeoutMS);
 		void readWriteDispatch(int32_t timeoutMS);

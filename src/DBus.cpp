@@ -147,6 +147,10 @@ int32_t DBus::requestName(const char* name, uint32_t flags) {
 	return ret;
 }
 
+const char* DBus::getUniqueName() {
+	return dbus_bus_get_unique_name(this->conn);
+}
+
 void DBus::addMatch(const char* rule) {
 	dbus_bus_add_match(this->conn, rule, &err);
 	this->throwErrAndFree();

@@ -67,13 +67,12 @@ static void inhibitCB(Inhibitor* inhibitor, Inhibit inhibit) {
 	try {
 		for (auto& ai : inhibitors) {
 			InhibitRequest r = {inhibit.type, inhibit.appname, inhibit.reason};
-			if (ai->instanceId != inhibitor->instanceId) {
+			if (ai->instanceId != inhibitor->instanceId) try {
 				auto newInhibit = ai->inhibit(r);
 				releasePlan[inhibit.id].push_back({ai, newInhibit.id});
-			}
+			} catch (uinhibit::InhibitRequestUnsupportedTypeException& e) {}
 		}
 	}
-	catch (uinhibit::InhibitRequestUnsupportedTypeException& e) {}
 	catch (uinhibit::InhibitNoResponseException& e) { 
 		printf(ANSI_COLOR_YELLOW "Warning: no response to a dbus method call\n" ANSI_COLOR_RESET); 
 	}
@@ -88,12 +87,13 @@ static void unInhibitCB(Inhibitor* inhibitor, Inhibit inhibit) {
 	try {
 		if (releasePlan.contains(inhibit.id)) {
 			for (auto& release : releasePlan.at(inhibit.id)) {
+				try {
 				release.first->unInhibit(release.second);
+				} catch (uinhibit::InhibitRequestUnsupportedTypeException& e) {}
 			}
 			releasePlan.erase(inhibit.id);
 		}
 	}
-	catch (uinhibit::InhibitRequestUnsupportedTypeException& e) {}
 	catch (uinhibit::InhibitNoResponseException& e) { 
 		printf(ANSI_COLOR_YELLOW "Warning: no response to a dbus method call\n" ANSI_COLOR_RESET); 
 	}

@@ -106,11 +106,13 @@ namespace uinhibit {
 	}
 
 	Inhibitor::ReturnObject DBusInhibitor::start() {
+		const char* mName = dbus.getUniqueName();
 		while(1) try {
 			dbus.readWriteDispatch(40);
 			while (1) try {
 				auto msg = dbus.popMessage();
 				if (msg.isNull()) break;
+				if (strcmp(msg.sender(),mName) == 0) continue;
 
 				if (msg.type() == DBUS_MESSAGE_TYPE_METHOD_CALL) {
 					for (auto& method : myMethods) {

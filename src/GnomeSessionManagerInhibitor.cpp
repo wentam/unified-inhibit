@@ -313,7 +313,7 @@ InhibitID THIS::mkId(std::string sender, uint32_t cookie) {
 
 	uint32_t size = (sender.size()>sizeof(idStruct.sender)) ? sizeof(idStruct.sender) : sender.size();
 	strncpy(idStruct.sender, sender.c_str(), size);
-	if(size>0) idStruct.sender[size-1]=0; // NULL terminate
+	if(size>0) idStruct.sender[size]=0; // NULL terminate
 
 	auto ptr = reinterpret_cast<std::byte*>(&idStruct);
 	InhibitID id(ptr, ptr+sizeof(idStruct));

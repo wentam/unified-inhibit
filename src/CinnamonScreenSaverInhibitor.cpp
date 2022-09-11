@@ -87,6 +87,36 @@ void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
 	}
 }
 
+static void simThread(std::stop_token stop_token, DBus* callDbus) {
+	while(!stop_token.stop_requested()) {
+		callDbus->newMethodCall(INTERFACE, PATH, INTERFACE, "SimulateUserActivity").send();
+		sleep(60);
+	}
+}
+
+Inhibit THIS::doInhibit(InhibitRequest r) {
+	this->lastUsInhibit++;
+	std::string sender = "us"+std::to_string(lastUsInhibit);
+	auto id = this->mkId(sender);
+
+	if (this->monitor) {
+		simThreads.emplace(std::piecewise_construct,
+											 std::forward_as_tuple(sender),
+											 std::forward_as_tuple(&simThread, this->callDbus.get()));
+	}
+
+	return {InhibitType::SCREENSAVER, r.appname, r.reason, id, (uint64_t)time(NULL)};
+};
+
+void THIS::doUnInhibit(InhibitID id) {
+	auto idStruct = reinterpret_cast<_InhibitID*>(&id[0]);
+	if (this->monitor && this->simThreads.contains(idStruct->sender)) {
+		this->simThreads.at(idStruct->sender).request_stop();
+		this->simThreads.at(idStruct->sender).detach();
+		this->simThreads.erase(idStruct->sender);
+	}
+}
+
 void THIS::poll() {
 	// Unregister any expired inhibits	
 	std::vector<InhibitID> eraseIDs;
@@ -107,7 +137,7 @@ InhibitID THIS::mkId(std::string sender) {
 
 	uint32_t size = (sender.size()>sizeof(idStruct.sender)) ? sizeof(idStruct.sender) : sender.size();
 	strncpy(idStruct.sender, sender.c_str(), size);
-	if(size>0) idStruct.sender[size-1]=0; // NULL terminate
+	if(size>0) idStruct.sender[size]=0; // NULL terminate
 
 	auto ptr = reinterpret_cast<std::byte*>(&idStruct);
 	InhibitID id(ptr, ptr+sizeof(idStruct));

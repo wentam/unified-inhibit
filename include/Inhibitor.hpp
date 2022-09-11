@@ -340,7 +340,8 @@ namespace uinhibit {
 			void handleIntrospect(DBus::Message* msg, DBus::Message* retmsg);
 			InhibitID mkId(std::string sender);
 			std::map<std::string, std::vector<InhibitID>> inhibitOwners; // sender, {ids}
-			uint32_t lastCookie = 0;
+			uint32_t lastUsInhibit = 0;
+			std::map<std::string, std::jthread> simThreads; // Our made-up sender, thread
 
 			void handleInhibitEvent(Inhibit inhibit) override {};
 			void handleUnInhibitEvent(Inhibit inhibit) override {};
@@ -348,10 +349,13 @@ namespace uinhibit {
 
 			// TODO: need to spawn a thread on doInhibit to constantly keep us alive with
 			// SimulateUserActivity requests
-			Inhibit doInhibit(InhibitRequest r) override { return {}; };
-			void doUnInhibit(InhibitID id) override {};
+			Inhibit doInhibit(InhibitRequest r) override;
+			void doUnInhibit(InhibitID id) override;
 
 			void poll() override;
+
+		private:
+			//void simThread(std::stop_token stop_token);
 	};
 
 	class LinuxKernelInhibitor : public Inhibitor {
