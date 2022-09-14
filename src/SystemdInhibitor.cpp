@@ -127,6 +127,7 @@ void THIS::handleListInhibitorsMsg(DBus::Message* msg, DBus::Message* retmsg) {
 
 void THIS::releaseThread(const char* path, Inhibit in) {
 	// We don't have read access to wait for EOF, so we just need to wait until the file goes away
+	// TODO: could probably use inotify for this
 	while (1) {
 		int r = access(path, F_OK);
 		if (r != 0) {

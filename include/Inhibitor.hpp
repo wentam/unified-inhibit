@@ -12,6 +12,7 @@
 #include <mutex>
 #include <coroutine>
 #include <thread>
+#include <set>
 
 namespace uinhibit {
 	class InhibitRequestUnsupportedTypeException : std::exception {};
@@ -34,7 +35,7 @@ namespace uinhibit {
 		std::string reason = "";
 	};
 
-	struct Inhibit : InhibitRequest {
+	struct Inhibit : public InhibitRequest {
 		InhibitID id;
 		uint64_t created = 0;
 	};
@@ -105,6 +106,39 @@ namespace uinhibit {
 		private:
 			void callEvent(bool isInhibit, Inhibit i);
 			InhibitType lastInhibitState = InhibitType::NONE;
+	};
+
+	class LinuxKernelInhibitor : public Inhibitor {
+		public:
+			LinuxKernelInhibitor(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
+													 std::function<void(Inhibitor*,Inhibit)> unInhibitCB,
+													 int32_t forkFD, int32_t forkOutFD);
+
+			ReturnObject start();
+			static void lockFork(int32_t inFD, int32_t outFD);
+		protected:
+			struct _InhibitID {
+				uint64_t instanceID;
+				char lockName[1024];
+			};	
+
+			Inhibit doInhibit(InhibitRequest) override;
+			void doUnInhibit(InhibitID) override;
+			void handleInhibitEvent(Inhibit inhibit) override;
+			void handleUnInhibitEvent(Inhibit inhibit) override;
+			void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) override;
+
+		private:
+			bool ok = true;
+			void watcherThread();
+			InhibitID mkId(const char* lockName);
+
+			std::mutex registerMutex;
+			std::vector<Inhibit> registerQueue;
+			std::vector<InhibitID> unregisterQueue;
+			int32_t forkFD = -1;
+
+			std::set<InhibitID> ourInhibits;
 	};
 
 	class DBusInhibitor : public Inhibitor {
@@ -356,10 +390,6 @@ namespace uinhibit {
 
 		private:
 			//void simThread(std::stop_token stop_token);
-	};
-
-	class LinuxKernelInhibitor : public Inhibitor {
-		// TODO
 	};
 
 	// wayland inhibit

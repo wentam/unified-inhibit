@@ -95,6 +95,9 @@ static void simThread(std::stop_token stop_token, DBus* callDbus) {
 }
 
 Inhibit THIS::doInhibit(InhibitRequest r) {
+	if ((r.type & InhibitType::SCREENSAVER) == InhibitType::NONE)
+		throw uinhibit::InhibitRequestUnsupportedTypeException();
+
 	this->lastUsInhibit++;
 	std::string sender = "us"+std::to_string(lastUsInhibit);
 	auto id = this->mkId(sender);

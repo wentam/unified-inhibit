@@ -18,6 +18,8 @@
 // * CLI argument parsing
 // * man page
 // * optional ability to write the current inhibit state to a file
+// * optional ability to forward screensaver locks to suspend and vice-versa
+// * ability to ignore inhibits from certain appnames (--ignore steam)
 
 // A good set of tests for each inhibitor:
 // * When something else implements, we start monitoring
@@ -124,11 +126,28 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
 	setenv("DISPLAY", cleanDisplay.c_str(), 0);
 	setenv("DBUS_SESSION_BUS_ADDRESS", sessionBusEnv, 0);
 
-	// D-Bus tries to prevent usage of setuid binaries by checking if euid != ruid.
-	// We need setuid, but we can just set both euid *and* ruid to root to get our root stuff done,
-	// then switch to our user for the rest.
+	// Set up lock-taking fork for linux kernel inhibitor
 	//
-	// Can't go back to root after that, but this covers our needs.
+	// This is in a fork because we have threads that should be unprivileged - but we need this
+	// constant service as root.
+	pid_t pid; int32_t inPipe[2]; int32_t outPipe[2];
+	if (pipe(inPipe) == -1 || pipe(outPipe) == -1) { printf("Failed to create pipe\n"); exit(1); }
+	if ((pid = fork()) < 0) { printf("Failed to fork\n"); exit(1); }
+
+	// Child runs lock fork
+ 	if (pid == 0) { 
+		close(inPipe[1]); 
+		close(outPipe[0]);
+		LinuxKernelInhibitor::lockFork(inPipe[0], outPipe[1]);
+		close(inPipe[0]);
+		close(outPipe[1]);
+		exit(0);
+	}
+	close(inPipe[0]);
+	close(outPipe[1]);
+
+	// D-Bus tries to prevent usage of setuid binaries by checking if euid != ruid.
+	// We need setuid, but we can just set both euid *and* ruid and D-Bus is happy.
 	auto ruid = getuid();
 
 	// D-Bus inhibitors that need the system bus should be constructed as root
@@ -157,6 +176,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
 	uinhibit::GnomeSessionManagerInhibitor i3(inhibitCB, unInhibitCB); inhibitors.push_back(&i3);
 	uinhibit::GnomeScreenSaverInhibitor i5(inhibitCB, unInhibitCB); inhibitors.push_back(&i5);
 	uinhibit::CinnamonScreenSaverInhibitor i6(inhibitCB, unInhibitCB); inhibitors.push_back(&i6);
+	uinhibit::LinuxKernelInhibitor i7(inhibitCB, unInhibitCB, inPipe[1], outPipe[0]); inhibitors.push_back(&i7);
 
 	// Run inhibitors
 	// Security note: it is critical we have dropped privileges before this point, as we will be
@@ -164,4 +184,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
 	std::vector<Inhibitor::ReturnObject> ros;
 	for (auto& inhibitor : inhibitors) ros.push_back(inhibitor->start());
 	while(1) for (auto& r : ros) {r.handle.resume(); fflush(stdout); }
+
+	close(inPipe[1]);
+	close(outPipe[0]);
 }

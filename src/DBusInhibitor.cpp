@@ -58,18 +58,19 @@ namespace uinhibit {
 				// TODO: becomeMonitor should provide an overloaded version taking a vector of std::string
 				dbus.becomeMonitor(Crules);
 
-				printf("%s[" ANSI_COLOR_YELLOW "-" ANSI_COLOR_RESET "]: Someone "
+				printf("[" ANSI_COLOR_YELLOW "-" ANSI_COLOR_RESET "] %s: Someone "
 							 "else has this dbus interface implemented. Became a monitor and will eavesdrop.\n",
 							 interface.c_str());
 			} catch (DBus::UnknownInterfaceError& e) {
-				printf("%s[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "]: "
+				printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] %s: "
 							 "UNSUPPORTED: Someone else has this dbus interface implemented. Tried to become a monitor in"
 							 " order to eavesdrop but your dbus daemon doesn't appear to support that (it's "
 							 "probably too old).\n", interface.c_str());
 			} catch (DBus::AccessDeniedError& e) {
-				printf("%s[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "]: "
+				printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] %s: "
 							 "ACCESS DENIED: Someone else has this dbus interface implemented. Tried to become a monitor to"
-							 " eavesdrop but was denied access. \n", interface.c_str());
+							 " eavesdrop but was denied access. You probably need to give me setuid (chown root "
+							 "uinhibitd && chmod 4755 uinhibitd). \n", interface.c_str());
 			}
 		} else {
 			int ret = 0;
@@ -77,12 +78,12 @@ namespace uinhibit {
 			try {
 				ret = dbus.requestName(interface.c_str(), DBUS_NAME_FLAG_REPLACE_EXISTING);
 			} catch (const DBus::AccessDeniedError& e) {
-				printf("%s[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "]: ACCESS DENIED: We tried to implement this interface but dbus denied our name request\n", interface.c_str());
+				printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] %s: ACCESS DENIED: We tried to implement this interface but dbus denied our name request\n", interface.c_str());
 				return;
 			}
 
 			if (ret != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-				printf("%s[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "]: Need to "
+				printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] %s: Need to "
 							 "implement this interface, but failed to obtain the interface name.\n",
 							 interface.c_str());
 			} else {
@@ -94,7 +95,7 @@ namespace uinhibit {
 
 				for (auto& str : signalStrings) dbus.addMatch(str.c_str());
 
-				printf("%s[" ANSI_COLOR_GREEN "✓" ANSI_COLOR_RESET "]: "
+				printf("[" ANSI_COLOR_GREEN "✓" ANSI_COLOR_RESET "] %s: "
 							 "Implementing interface\n", interface.c_str());
 			}
 		}
@@ -107,12 +108,18 @@ namespace uinhibit {
 
 	Inhibitor::ReturnObject DBusInhibitor::start() {
 		const char* mName = dbus.getUniqueName();
+		const char* mName2 = "";
+		if (callDbus != NULL) {
+		 mName2	= callDbus->getUniqueName();
+		}
+
 		while(1) try {
 			dbus.readWriteDispatch(40);
 			while (1) try {
 				auto msg = dbus.popMessage();
 				if (msg.isNull()) break;
 				if (strcmp(msg.sender(),mName) == 0) continue;
+				if (strcmp(msg.sender(),mName2) == 0) continue;
 
 				if (msg.type() == DBUS_MESSAGE_TYPE_METHOD_CALL) {
 					for (auto& method : myMethods) {
