@@ -38,10 +38,7 @@ THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
        {INTERFACE, "SimulateUserActivity", METHOD_CAST &THIS::handleSimActivityMsg, "*"},
        {INTROSPECT_INTERFACE, "Introspect", METHOD_CAST &THIS::handleIntrospect, INTERFACE}
      },
-     {
-      {DBUS_INTERFACE, "NameOwnerChanged", SIGNAL_CAST &THIS::handleNameLostMsg}
-     }){}
-
+     {}){}
 
 void THIS::handleSimActivityMsg(DBus::Message* msg, DBus::Message* retmsg) {
   // We treat this as an inhibit that expires in 5min
@@ -68,12 +65,6 @@ void THIS::handleSimActivityMsg(DBus::Message* msg, DBus::Message* retmsg) {
   this->inhibitOwners[std::string(msg->sender())].push_back(i.id);
 
   if (!this->monitor) msg->newMethodReturn().send();
-}
-
-void THIS::handleNameLostMsg(DBus::Message* msg) {
-  const char* name; msg->getArgs(DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
-  for (auto id : this->inhibitOwners[name]) this->registerUnInhibit(id);
-  this->inhibitOwners[name].clear();
 }
 
 void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
