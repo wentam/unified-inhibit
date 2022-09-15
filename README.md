@@ -38,7 +38,7 @@ D-Bus inhibitors will implement their interface when nobody else is implementing
 When another application has an interface implemented, we will eavesdrop via D-Bus
 [BecomeMonitor](https://dbus.freedesktop.org/doc/dbus-specification.html#bus-messages-become-monitor).
 
-### CLI actions
+## CLI actions
 
 The daemon accepts command-line arguments to run shell commands on inhibit events. This is useful
 for users of lightweight window managers that want to tie in their screen locker or manage
