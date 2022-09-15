@@ -55,6 +55,14 @@ uinhibitd --inhibit-action "xautolock -disable" \
 Disables xautolocker while there is an active inhibit. This will capture the inhibit state from all
 interfaces.
 
+(inhibit-type specific flags are planned)
+
+## Donations
+Much of my time is volunteered towards open-source projects to improve the free software ecosystem
+for all.
+
+[You can support my work here](https://liberapay.com/wentam) :+1:.
+
 ## setuid
 
 Linux kernel wakelocks and org.freedesktop.login1 will probably require that uinhibitd has setuid:

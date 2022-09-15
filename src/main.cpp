@@ -1,3 +1,18 @@
+// Copyright (C) 2022 Matthew Egeler
+//
+// This file is part of unified-inhibit.
+//
+// unified-inhibit is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// unified-inhibit is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+// without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with unified-inhibit. If
+// not, see <https://www.gnu.org/licenses/>.
+
 #include <cstdio>
 #include "Inhibitor.hpp"
 #include <thread>
@@ -151,11 +166,8 @@ static Args parseArgs(int argc, char* argv[]) {
       lastArg = arg;
     }
 
-    if (leadingDashes == 0) {
-      if (ret.params.contains(lastArg)) {
-        ret.params.at(lastArg).push_back(arg);
-      }
-    }
+    // Param values
+    if (leadingDashes == 0 && ret.params.contains(lastArg)) ret.params.at(lastArg).push_back(arg);
   }
 
   return ret;
@@ -205,7 +217,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
 
   // Security note: we're root, always ensure these constructors are safe and don't touch raw
   // user input in any way. Our user input may be unprivileged.
-  uinhibit::SystemdInhibitor i4(inhibitCB, unInhibitCB); inhibitors.push_back(&i4); 
+  uinhibit::SystemdInhibitor i4(inhibitCB, unInhibitCB); inhibitors.push_back(&i4);
 
   // D-Bus inhibitors that need the session bus should be constructed as the user
   if (setresuid(ruid,ruid,ruid) != 0) { printf("Failed to drop privileges\n"); exit(1); }
