@@ -20,7 +20,8 @@ you'll get all of the events.
 
 uinhibitd can also run shell commands on inhibit/release providing an easy way to get wakelocks working on systems that don't otherwise have one of these interfaces implemented.
 
-Currently support inhibitors | Protocol
+## Currently supported inhibitors
+Inhibitor | Protocol
 ---|---
 org.freedesktop.login1 | D-Bus
 org.freedesktop.ScreenSaver | D-Bus
