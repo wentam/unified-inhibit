@@ -9,7 +9,7 @@
     system:
     let
       pkgs = nixpkgs.legacyPackages.${system};
-    in {
+    in rec {
       devShells.default = pkgs.gcc12Stdenv.mkDerivation {
         name = "build";
         buildInputs = [ pkgs.dbus ];
@@ -25,6 +25,7 @@
           cp build/uinhibitd $out/bin
         '';
       };
+      apps.default = { type = "app"; program = "${packages.default}/bin/uinhibitd"; };
     }
   );
 }
