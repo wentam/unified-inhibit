@@ -1,10 +1,6 @@
-# unified-inhibit
+## Linux wakelocks/inhibitors are a fragmented nightmare.
 
-## The problem
-
-Linux wakelocks/inhibitors are a fragmented nightmare.
-
-If you're a user, you pretty much need to be running gnome or KDE for inhibitors to work correctly.
+If you're a user, you pretty much need to be running gnome or KDE for inhibitors to work correctly and reliably.
 If you're an application developer, you need to support a long list of inhibitor mechanisms to get
 things working reliably everywhere. It's painful for everyone.
 
@@ -12,7 +8,7 @@ This is the bad kind of fragmentation: These aren't unique approaches to solving
 with strong pros and cons; this is a large set of standards all doing the same thing in almost the
 exact same way. We're just trying to set and track a few boolean values.
 
-## What this does about it
+## What unified-inhibit does about it
 
 unified-inhibit (uinhibitd) implements/listens on as many inhibitor interfaces as possible
 forwarding all inhibit events to all interfaces. If an app inhibits the screensaver via
@@ -22,19 +18,19 @@ the other inhibitors that accept a screensaver inhibit event).
 This means all interfaces effectively share the same state. Use any interface of your choosing,
 you'll get all of the events.
 
-Currently support inhibitors |
+uinhibitd can also run shell commands on inhibit/release providing an easy way to get wakelocks working on systems that don't otherwise have one of these interfaces implemented.
+
+Currently support inhibitors | Protocol
 ---|---
-org.freedesktop.login1 |
-org.freedesktop.ScreenSaver |
-org.freedesktop.PowerManager |
-org.gnome.SessionManager |
-org.gnome.ScreenSaver |
-org.cinnamon.ScreenSaver |
-Linux kernel wakelock |
+org.freedesktop.login1 | D-Bus
+org.freedesktop.ScreenSaver | D-Bus
+org.freedesktop.PowerManager | D-Bus
+org.gnome.SessionManager | D-Bus
+org.gnome.ScreenSaver | D-Bus
+org.cinnamon.ScreenSaver | D-Bus
+Linux kernel wakelock | sysfs
 
 More are out there. Please open issues for missing interfaces!
-
-### D-Bus inhibitors
 
 D-Bus inhibitors will implement their interface when nobody else is implementing the interface.
 
@@ -78,6 +74,26 @@ user and root.
 The necessary precautions to avoid privilage escalation (such as a clean environment) have been
 taken.
 
+## org.freedesktop.login1 (systemd inhibit)
+
+Because this interface resides on the system bus, it requires special consideration.
+
+In monitoring mode (on a systemd system), uinhibitd probably requires the setuid bit to gain access.
+
+In implementation mode (on a non-systemd system), uinhibitd needs to have permission to claim the
+name org.freedesktop.login1 on the system bus. What is needed here depends on your existing
+configuration. I've accomplished this on my system by giving uinhibitd setuid and adding the
+following D-Bus rules in /etc/dbus-1/system.d/root-can-own-things.conf:
+
+```xml
+<busconfig>
+  <policy user="root">
+    <allow own="org.freedesktop.login1"/>
+    <allow send_type="*"/>
+  </policy>
+</busconfig>
+```
+
 ## Try it out (nix)
 
 ```
@@ -93,24 +109,4 @@ make
 or
 ```
 nix build
-```
-
-## org.freedesktop.login1 (systemd inhibit)
-
-Because this interface resides on the system bus, it requires special consideration.
-
-In monitoring mode (on a systemd system), uinhibitd probably requires the setuid bit to gain access.
-
-In implementation mode (on a non-systemd system), uinhibitd needs to have permission to claim the
-name org.freedesktop.login1 on the system bus. What is needed here depends on your existing
-configuration. I've accomplished this on my system by giving uinhibitd setuid and adding the
-following D-Bus rules in /etc/dbus-1/system.d/root-can-own-things.conf:
-
-```xml
-<busconfig>
-  <policy user="root">
-    <allow own="*"/>
-    <allow send_type="*"/>
-  </policy>
-</busconfig>
 ```
