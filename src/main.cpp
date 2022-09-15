@@ -19,6 +19,8 @@
 #include <mutex>
 #include "util.hpp"
 
+extern char **environ;
+
 // TODO
 // * command line argument to disable specific inhibitors
 // * command line argument to force specific D-Bus inhibitors to monitoring mode (to ensure some
@@ -174,6 +176,10 @@ static Args parseArgs(int argc, char* argv[]) {
 }
 
 int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
+  // Clone environment to restore after setuid stuff
+  std::vector<std::string> startEnv;
+  for(char **current = environ; *current; current++) startEnv.push_back(*current);
+
   // Security: We might be setuid. Clean up environment.
   const char* sessionBusEnv = getenv("DBUS_SESSION_BUS_ADDRESS");
   const char* display = getenv("DISPLAY");
@@ -224,6 +230,15 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
   if (getuid() != ruid) exit(1); // Should never happen
   // ---------------------------- SETUID SAFE --------------------------
 
+  // Restore environment such that any user-commands have everything they need
+  std::vector<char*> envMem;
+  for (auto str : startEnv) {
+    envMem.emplace_back();
+    envMem.back() = (char*)malloc(str.size()+1);
+    strcpy(envMem.back(), str.c_str());
+    putenv(envMem.back());
+  }
+
   // Parse args/user input
   auto args = parseArgs(argc, argv);
 
@@ -259,4 +274,5 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
 
   close(inPipe[1]);
   close(outPipe[0]);
+  for (auto m : envMem) free(m);
 }
