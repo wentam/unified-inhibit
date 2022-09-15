@@ -48,12 +48,12 @@ for users of lightweight window managers that want to tie in their screen locker
 auto-suspend:
 
 ```
-uinhibitd --inhibit-screensaver-action "xautolock -disable" \
-          --uninhibit-screensaver-action "xautolock -enable"
+uinhibitd --inhibit-action "xautolock -disable" \
+          --uninhibit-action "xautolock -enable"
 ```
 
-Disables xautolocker while there is an active screensaver inhibit. This will capture the inhibit
-state from all interfaces.
+Disables xautolocker while there is an active inhibit. This will capture the inhibit state from all
+interfaces.
 
 ## setuid
 
