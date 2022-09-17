@@ -30,7 +30,7 @@ exact same way. We're just trying to set and track a few boolean values.
 
 ### What about [caffeine-ng](https://codeberg.org/WhyNotHugo/caffeine-ng)/[xidlehook](https://github.com/jD91mZM2/xidlehook)?
 
-These tools can inhibit based upon any applications that are fullscreen or playing audio. This is a useful heuristic to
+These tools can inhibit based on any applications that are fullscreen or playing audio. This is a useful heuristic to
 work around the issue for some use-cases, but does not cover this problem nearly as flexibly/durably as explicit wakelocks.
 
 Applications have more context information regarding when a wakelock is actually needed.
@@ -78,11 +78,12 @@ taken.
 Because this interface resides on the system bus, it requires special consideration.
 
 In monitoring mode (on a systemd system), uinhibitd probably requires the setuid bit to gain access.
+You might need to configure D-Bus as well depending on how your system is set up.
 
 In implementation mode (on a non-systemd system), uinhibitd needs to have permission to claim the
-name org.freedesktop.login1 on the system bus. What is needed here depends on your existing
-configuration. I've accomplished this on my system by giving uinhibitd setuid and adding the
-following D-Bus rules in /etc/dbus-1/system.d/root-can-own-things.conf:
+name org.freedesktop.login1 on the system bus. What is needed here depends on how your system is
+configured. I've accomplished this on my system by giving uinhibitd setuid and adding the
+following D-Bus rules in /etc/dbus-1/system.d/root-can-own-login1.conf:
 
 ```xml
 <busconfig>
@@ -152,7 +153,8 @@ uinhibitd --inhibit-action "xautolock -disable" \
 Disables xautolocker while there is an active inhibit. This will capture the inhibit state from all
 interfaces.
 
-(inhibit-type specific flags are planned)
+--ia/--uia are shorthand for these flages. Inhibit-type specific flags are planned. Man page/docs
+don't exist yet.
 
 ## Donations
 Much of my time is volunteered towards open-source projects to improve the free software ecosystem
