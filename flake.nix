@@ -13,17 +13,15 @@
       devShells.default = pkgs.gcc12Stdenv.mkDerivation {
         name = "build";
         buildInputs = [ pkgs.dbus ];
-        NIX_CFLAGS_COMPILE="-isystem ${pkgs.dbus.dev}/include/dbus-1.0/ -isystem ${pkgs.dbus.lib}/lib/dbus-1.0/include/";
+        nativeBuildInputs = [ pkgs.pkgconf ];
       };
       packages.default = pkgs.stdenv.mkDerivation {
         name="unified-inhibit";
         src = ./.;
         buildInputs = [ pkgs.dbus ];
-        NIX_CFLAGS_COMPILE="-isystem ${pkgs.dbus.dev}/include/dbus-1.0/ -isystem ${pkgs.dbus.lib}/lib/dbus-1.0/include/";
-        installPhase = ''
-          mkdir -p $out/bin
-          cp build/uinhibitd $out/bin
-        '';
+        nativeBuildInputs = [ pkgs.pkgconf ];
+        buildPhase = ''make -j12 prefix=$out'';
+        installPhase = ''make install prefix=$out'';
       };
       apps.default = { type = "app"; program = "${packages.default}/bin/uinhibitd"; };
     }

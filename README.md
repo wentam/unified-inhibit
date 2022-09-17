@@ -121,11 +121,12 @@ nix run github:wentam/unified-inhibit
 ## Dependencies
 
 * libdbus
+* [pkgconf](https://github.com/pkgconf/pkgconf) (to find D-Bus headers at build time)
 
 ## Building
 
 ```
-make
+make -j12
 ```
 or
 ```

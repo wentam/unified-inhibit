@@ -28,7 +28,7 @@
 
 using namespace uinhibit;
 
-THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB, 
+THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
            std::function<void(Inhibitor*, Inhibit)> unInhibitCB)
   : SimpleDBusInhibitor
     (inhibitCB, unInhibitCB,
@@ -38,7 +38,7 @@ THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
      {},
      INTERFACE,
      "/org/gnome/ScreenSaver",
-     InhibitType::SCREENSAVER,  
+     InhibitType::SCREENSAVER,
      "<method name='SimulateUserActivity' />")
 {}
 
@@ -53,7 +53,7 @@ void THIS::handleSimActivityMsg(DBus::Message* msg, DBus::Message* retmsg) {
     (uint64_t)time(NULL)
   };
 
-  // Clear any existing simActivity inhibits from this sender 
+  // Clear any existing simActivity inhibits from this sender
   std::vector<InhibitID> eraseIDs;
   for (auto& [id, in] : this->activeInhibits) {
     auto idc = id;
@@ -71,7 +71,7 @@ void THIS::handleSimActivityMsg(DBus::Message* msg, DBus::Message* retmsg) {
 }
 
 void THIS::poll() {
-  // Unregister any expired inhibits  
+  // Unregister any expired inhibits
   std::vector<InhibitID> eraseIDs;
   for (auto& [id, in] : this->activeInhibits) {
     auto idc = id;

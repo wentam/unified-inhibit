@@ -83,9 +83,10 @@ namespace uinhibit {
                "probably too old).\n", interface.c_str());
       } catch (DBus::AccessDeniedError& e) {
         printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] %s: "
-               "ACCESS DENIED: Someone else has this dbus interface implemented. Tried to become a monitor to"
-               " eavesdrop but was denied access. You probably need to give me setuid (chown root "
-               "uinhibitd && chmod 4755 uinhibitd). \n", interface.c_str());
+               "ACCESS DENIED: Someone else has this dbus interface implemented. Tried to become a"
+               " monitor to eavesdrop but was denied access. You might need to give me setuid "
+               " (chown root uinhibitd && chmod 4755 uinhibitd). You might need to allow monitoring"
+               " in D-Bus config.\n", interface.c_str());
       }
     } else {
       int ret = 0;
@@ -93,7 +94,9 @@ namespace uinhibit {
       try {
         ret = dbus.requestName(interface.c_str(), DBUS_NAME_FLAG_REPLACE_EXISTING);
       } catch (const DBus::AccessDeniedError& e) {
-        printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] %s: ACCESS DENIED: We tried to implement this interface but dbus denied our name request\n", interface.c_str());
+        printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] %s: ACCESS DENIED: We tried to implement"
+               " this interface but dbus denied our name request. You might need to configure D-Bus"
+               " to allow us access (see README.md)\n", interface.c_str());
         return;
       }
 
