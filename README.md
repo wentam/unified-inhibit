@@ -153,7 +153,7 @@ uinhibitd --inhibit-action "xautolock -disable" \
 Disables xautolocker while there is an active inhibit. This will capture the inhibit state from all
 interfaces.
 
---ia/--uia are shorthand for these flages. Inhibit-type specific flags are planned. Man page/docs
+--ia/--uia are shorthand for these flags. Inhibit-type specific flags are planned. Man page/docs
 don't exist yet.
 
 ## Donations
