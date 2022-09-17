@@ -15,6 +15,8 @@
 
 #pragma once
 #include <unistd.h>
+#include <string>
+#include <vector>
 
 #define ANSI_COLOR_BOLD    "\x1b[1m"
 #define ANSI_COLOR_RED     "\x1b[31m"
@@ -24,6 +26,16 @@
 #define ANSI_COLOR_BLUE    "\x1b[34m"
 #define ANSI_COLOR_MAGENTA "\x1b[35m"
 #define ANSI_COLOR_CYAN    "\x1b[36m"
+
+#define ANSI_COLOR_BOLD_BLK "\x1B[1;30m"
+#define ANSI_COLOR_BOLD_RED "\x1B[1;31m"
+#define ANSI_COLOR_BOLD_GREEN "\x1B[1;32m"
+#define ANSI_COLOR_BOLD_YELLOW "\x1B[1;33m"
+#define ANSI_COLOR_BOLD_BLUE "\x1B[1;34m"
+#define ANSI_COLOR_BOLD_MAGENTA "\x1B[1;35m"
+#define ANSI_COLOR_BOLD_CYAN "\x1B[1;36m"
+#define ANSI_COLOR_BOLD_WHITE "\x1B[1;37m"
+
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
 static std::string strMerge(std::vector<std::string> strings, char sep) {
