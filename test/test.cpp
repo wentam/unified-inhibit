@@ -122,7 +122,7 @@ void startDbusDaemon() {
 
   if (pid == 0) {
     setpgid(getpid(), getpid());
-    if (system("dbus-daemon --session --address='unix:path=/tmp/uitest.sock'") == -1) {
+    if (system("dbus-daemon --config-file=test/dbus.conf --address='unix:path=/tmp/uitest.sock'") == -1) {
       printf("Failed to spool up local dbus-daemon (do you have dbus-daemon?)\n");
       exit(1);
     };
@@ -139,6 +139,7 @@ void exitHandler() {
 
 int main() {
   atexit(exitHandler);
+  std::set_terminate(exitHandler);
 
   // Set up our own dbus daemon with our own socket. We can use this to run tests
   // in isolation from the system.

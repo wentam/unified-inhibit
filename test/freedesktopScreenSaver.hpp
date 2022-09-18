@@ -20,8 +20,8 @@ assert(!except, "Constructor generates no exceptions with valid setup");
   bool hasResult = assert(!r.isNull(), "Implementation mode: Returns a result when calling Inhibit"
                           " over D-Bus");
 
-  assert(hasResult, [&r]() {
-    uint32_t cookie = 0;
+  uint32_t cookie = 0;
+  bool validCookie = assert(hasResult, [&r, &cookie]() {
     r.getArgs(DBUS_TYPE_UINT32, &cookie, DBUS_TYPE_INVALID);
 
     return cookie > 0;
@@ -41,4 +41,19 @@ assert(!except, "Constructor generates no exceptions with valid setup");
             && (in.type == InhibitType::SCREENSAVER));
   }, "Implementation mode: Calling Inhibit over D-Bus results in an Inhibit object stored that"
   " looks like the inhibit we requested");
+
+  assert(validCookie && inhibitExists, [&dbus, &cookie]() {
+    bool noreply = false;
+    bool null = false;
+    try {
+      auto r = dbus.newMethodCall("org.freedesktop.ScreenSaver", "/ScreenSaver",
+                             "org.freedesktop.ScreenSaver", "UnInhibit")
+        .appendArgs(DBUS_TYPE_UINT32, &cookie, DBUS_TYPE_INVALID)
+        ->sendAwait(200);
+      null = r.isNull();
+    } catch (DBus::NoReplyError& e) { noreply = true; }
+    return !null && !noreply;
+  }, "Implementation mode: Replies to a call to UnInhibit");
+
+  // TODO inhibit/uninhibit handlers get called in the right situations
 }

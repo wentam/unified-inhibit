@@ -126,8 +126,10 @@ nix run github:wentam/unified-inhibit
 
 ## Building
 
+From repository root:
 ```
 make -j12
+make test
 ```
 or
 ```

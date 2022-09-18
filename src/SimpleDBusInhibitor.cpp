@@ -95,9 +95,12 @@ void THIS::handleUnInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
   auto id = this->mkId(msg->sender(), cookie);
   this->registerUnInhibit(id);
 
-  // TODO I don't think this is actually cleaning up properly
+
+  // TODO I don't think this is actually cleaning up properly, might need to call erase?
   std::remove_if(inhibitOwners[msg->sender()].begin(), inhibitOwners[msg->sender()].end(),
                  [&id](InhibitID eid) { return id == eid; });
+
+  if (!this->monitor) msg->newMethodReturn().send();
 }
 
 void THIS::handleNameLostMsg(DBus::Message* msg) {
