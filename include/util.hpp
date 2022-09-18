@@ -18,6 +18,16 @@
 #include <string>
 #include <vector>
 
+#define VERSION_MAJOR 0
+#define VERSION_MINOR 1
+#define VERSION_REVISION 1
+
+static char _version[64];
+static char* version() {
+  sprintf(_version, "%d.%d.%d",VERSION_MAJOR,VERSION_MINOR,VERSION_REVISION);
+  return _version;
+}
+
 #define ANSI_COLOR_BOLD    "\x1b[1m"
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_BRIGHTRED "\x1b[1;31m"

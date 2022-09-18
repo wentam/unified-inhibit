@@ -159,7 +159,7 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
       if(replymsg.notNull()) replymsg.getArgs(DBUS_TYPE_UINT32, &cookie, DBUS_TYPE_INVALID);
     } catch (DBus::NoReplyError& e) {
       throw InhibitNoResponseException();
-    } 
+    }
   } else {
     this->lastCookie++;
     if (this->lastCookie == 0) this->lastCookie = 1;

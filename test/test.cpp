@@ -116,13 +116,21 @@ bool assert(bool dependency, std::function<bool()> run, std::string msg) {
   else return assert(false, "(Because assertion dependency false) "+msg);
 }
 
+bool assert(bool dependency, bool condition, std::string msg) {
+  if (dependency) return assert(condition, msg);
+  else return assert(false, "(Because assertion dependency false) "+msg);
+}
+
 std::vector<int> dbusPIDs;
+// kills daemon after 30 seconds to handle corner-cases that can leave dbus-daemon running
 void startDbusDaemon() {
   auto pid = fork();
 
   if (pid == 0) {
     setpgid(getpid(), getpid());
-    if (system("dbus-daemon --config-file=test/dbus.conf --address='unix:path=/tmp/uitest.sock'") == -1) {
+    if (system("dbus-daemon --config-file=test/dbus.conf --address='unix:path=/tmp/uitest.sock'"
+               " 1>/dev/null 2>/dev/null &"
+               " export DDPID=$! && sleep 30 && kill $DDPID") == -1) {
       printf("Failed to spool up local dbus-daemon (do you have dbus-daemon?)\n");
       exit(1);
     };

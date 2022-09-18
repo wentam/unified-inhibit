@@ -176,6 +176,14 @@ static Args parseArgs(int argc, char* argv[]) {
 }
 
 int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
+  puts("------------------------------------");
+  printf("unified-inhibit v%s\n\n", version());
+  puts(
+       "Built with volunteered time. You can support my work at"
+       " https://liberapay.com/wentam"
+       );
+  puts("------------------------------------");
+
   // Clone environment to restore after setuid stuff
   std::vector<std::string> startEnv;
   for(char **current = environ; *current; current++) startEnv.push_back(*current);

@@ -179,6 +179,8 @@ namespace uinhibit {
                     std::vector<DBusSignalCB> mySignals);
 
       ReturnObject start() override;
+
+      bool monitor;
     protected:
       DBus dbus;
       std::unique_ptr<DBus> callDbus; // We're not permitted to send messages when in monitoring 
@@ -186,7 +188,6 @@ namespace uinhibit {
                                       // defined for that purpose.
                                       //
                                       // Undefined when not in monitoring mode.
-      bool monitor;
 
       std::vector<DBusMethodCB> myMethods;
       std::vector<DBusSignalCB> mySignals;
