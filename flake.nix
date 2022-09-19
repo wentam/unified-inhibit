@@ -13,7 +13,7 @@
       devShells.default = pkgs.gcc12Stdenv.mkDerivation {
         name = "build";
         buildInputs = [ pkgs.dbus ];
-        nativeBuildInputs = [ pkgs.pkgconf ];
+        nativeBuildInputs = [ pkgs.pkgconf pkgs.scdoc ];
       };
       packages.default = pkgs.stdenv.mkDerivation {
         name="unified-inhibit";

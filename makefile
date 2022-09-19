@@ -26,7 +26,9 @@ debug: build/uinhibitd
 .PHONY:install
 install:
 	mkdir -p ${DESTDIR}${prefix}/bin
+	mkdir -p ${DESTDIR}${prefix}/share/man/man1
 	install -m=0755 build/uinhibitd ${DESTDIR}${prefix}/bin/uinhibitd
+	install doc/uinhibitd.1.roff ${DESCDIR}${prefix}/share/man/man1/uinhibitd.1
 
 .PHONY:clean
 clean:
@@ -36,6 +38,11 @@ clean:
 test: build/test
 	@echo "---- Begin tests ----"
 	@build/test
+
+# For development: .roff file should be in-repo such that users don't need scdoc to build.
+.PHONY:doc
+doc: doc/uinhibitd.1.roff
+	man doc/uinhibitd.1.roff
 
 build/:
 	mkdir -p build
@@ -52,3 +59,6 @@ build/%.o: src/%.cpp
 build/test: CXXFLAGS += -g -DDEBUG -Og
 build/test: test/test.cpp $(filter-out build/main.o,$(OBJS))
 	$(CXX) $(CXXFLAGS) $< $(LINK) -MMD -o $@ $(filter-out build/main.o,$(OBJS))
+
+doc/uinhibitd.1.roff: doc/uinhibitd.1.scd
+	SOURCE_DATE_EPOCH=$(shell date +%s) scdoc < doc/uinhibitd.1.scd > doc/uinhibitd.1.roff

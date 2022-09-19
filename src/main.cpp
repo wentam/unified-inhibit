@@ -184,6 +184,14 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
        );
   puts("------------------------------------");
 
+
+  // Parse args/user input
+  auto args = parseArgs(argc, argv);
+
+  if (args.params.contains("version")) exit(0);
+
+  if (args.params.contains("help") || args.flags.contains('h')) exit(system("man uinhibitd"));
+
   // Clone environment to restore after setuid stuff
   std::vector<std::string> startEnv;
   for(char **current = environ; *current; current++) startEnv.push_back(*current);
@@ -246,9 +254,6 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
     strcpy(envMem.back(), str.c_str());
     putenv(envMem.back());
   }
-
-  // Parse args/user input
-  auto args = parseArgs(argc, argv);
 
   if (args.params.contains("inhibit-action")) {
     func1 = strMerge(args.params.at("inhibit-action"),' ');
