@@ -28,7 +28,7 @@
 
 using namespace uinhibit;
 
-THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB, 
+THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
            std::function<void(Inhibitor*, Inhibit)> unInhibitCB)
   : SimpleDBusInhibitor
     (inhibitCB, unInhibitCB,
@@ -38,7 +38,7 @@ THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
      {},
      INTERFACE,
      "/PowerManager",
-     InhibitType::SUSPEND,  
+     InhibitType::SUSPEND,
       "<method name='HasInhibit'>"
       "  <arg type='b' name='has_inhibit' direction='out'/>"
       "</method>"

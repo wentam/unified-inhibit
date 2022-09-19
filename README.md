@@ -1,7 +1,7 @@
 # unified-inhibit - Make wakelocks actually work
 
-* [The problem](#the-problem-linux-wakelocksinhibitors-are-a-fragmented-nightmare)
-  * [What about caffeine-ng/xidlehook?](#what-about-caffeine-ngxidlehook) 
+* [The problem](#the-problem)
+  * [What about caffeine-ng/xidlehook?](#what-about-caffeine-ngxidlehook)
 * [What unified-inhibit does](#what-unified-inhibit-does)
 * [Setup/configuration](#setupconfiguration)
   * [setuid](#setuid)
@@ -13,7 +13,9 @@
 * [Building](#building)
 * [Donations](#donations)
 
-## The problem: Linux wakelocks/inhibitors are a fragmented nightmare.
+## The problem
+
+Linux wakelocks/inhibitors are a fragmented nightmare.
 
 When an app like VLC is playing a video, it needs to let your system know not to show the screensaver/lock the screen/suspend the system.
 These requests are sometimes called inhibits or wakelocks. The linux desktop has no single agreed-upon standard for how
@@ -126,12 +128,15 @@ nix run github:wentam/unified-inhibit
 
 ## Building
 
-From repository root:
+Release build:
 ```
-make -j12
-make test
+make -j12 release test
 ```
-or
+or with debugging symbols:
+```
+make -j12 debug test
+```
+or with nix (release build):
 ```
 nix build
 ```

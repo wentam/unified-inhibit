@@ -364,7 +364,7 @@ DBus::Message* DBus::Message::appendArgs(int32_t firstArgType, ...) {
 
 void DBus::Message::send() {
   dbus_connection_send(this->dbus->conn, this->msg.get()->msg, NULL);
-  this->dbus->flush();
+  //this->dbus->flush();
 };
 
 void DBus::Message::send(uint32_t serial) {

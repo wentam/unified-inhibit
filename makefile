@@ -11,6 +11,9 @@ OBJS = $(SRCS:src/%.cpp=build/%.o)
 DEPS = $(OBJS:%.o=%.d)
 DEPS += $(call rwildcard,build/,*.d)
 
+.PHONY:default
+default: release
+
 .PHONY:release
 release: CXXFLAGS += -Os
 release: build/uinhibitd
@@ -46,5 +49,6 @@ build/%.o: src/%.cpp
 	@mkdir -p $(@D)
 	$(CXX) $(CXXFLAGS) -fPIC -MMD -c $< -o $@
 
+build/test: CXXFLAGS += -g -DDEBUG -Og
 build/test: test/test.cpp $(filter-out build/main.o,$(OBJS))
 	$(CXX) $(CXXFLAGS) $< $(LINK) -MMD -o $@ $(filter-out build/main.o,$(OBJS))
