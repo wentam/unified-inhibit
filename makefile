@@ -28,7 +28,7 @@ install:
 	mkdir -p ${DESTDIR}${prefix}/bin
 	mkdir -p ${DESTDIR}${prefix}/share/man/man1
 	install -m=0755 build/uinhibitd ${DESTDIR}${prefix}/bin/uinhibitd
-	install doc/uinhibitd.1.roff ${DESCDIR}${prefix}/share/man/man1/uinhibitd.1
+	install doc/uinhibitd.1.roff ${DESTDIR}${prefix}/share/man/man1/uinhibitd.1
 
 .PHONY:clean
 clean:
