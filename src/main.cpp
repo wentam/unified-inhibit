@@ -205,7 +205,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
   if (clearenv() != 0) { printf("Failed to clear environment\n"); exit(1); }
 
   setenv("DISPLAY", cleanDisplay.c_str(), 0);
-  setenv("DBUS_SESSION_BUS_ADDRESS", sessionBusEnv, 0);
+  if (sessionBusEnv != nullptr) setenv("DBUS_SESSION_BUS_ADDRESS", sessionBusEnv, 0);
 
   // Set up lock-taking fork for linux kernel inhibitor
   //

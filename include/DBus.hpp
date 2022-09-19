@@ -35,7 +35,7 @@ class DBus {
     class Error : public Exception {
       public:
         Error(const char* msg) {
-          this->message = (char*)malloc(strlen(msg)); 
+          this->message = (char*)malloc(strlen(msg)+1);
           strcpy(this->message, msg);
         };
         ~Error() {
