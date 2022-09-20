@@ -97,7 +97,7 @@ following D-Bus rules in /etc/dbus-1/system.d/root-can-own-login1.conf:
 ```
 
 ## Supported inhibitors
-Inhibitor | Protocol | Directionality supported | Notes
+Inhibitor | Protocol | Direction | Notes
 ---|---|---|---
 org.freedesktop.login1 | D-Bus | <-> | Probably need to chown root && chmod 4775 uinhibitd (setuid). Might need to configure D-Bus.
 org.freedesktop.ScreenSaver | D-Bus | <-> |

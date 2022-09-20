@@ -169,7 +169,12 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
   auto args = parseArgs(argc, argv);
 
   if (args.params.contains("version")) exit(0);
-  if (args.params.contains("help") || args.flags.contains('h')) exit(system("man uinhibitd"));
+  if (args.params.contains("help") || args.flags.contains('h')) {
+    int r = system("man uinhibitd");
+    if (r != 0) r = system("man -l doc/uinhibitd.1.roff");
+    if (r != 0) r = system("man -l ../doc/uinhibitd.1.roff");
+    exit(0);
+  }
 
   puts("\n[<-] : Listening for events from interface");
   puts("[->] : Sending events to interface");
