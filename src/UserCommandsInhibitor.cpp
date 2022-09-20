@@ -59,7 +59,7 @@ THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
            "No user commands specified. See man page to specify (un)inhibit actions. \n");
   } else if (cmdSize > 0) {
     printf("[" ANSI_COLOR_GREEN "->" ANSI_COLOR_RESET "] User actions: "
-           "%ld user hooks present\n", cmdSize);
+           "%ld user action(s) present\n", cmdSize);
     this->ok = true;
   }
 }

@@ -74,17 +74,17 @@ namespace uinhibit {
         // TODO: becomeMonitor should provide an overloaded version taking a vector of std::string
         dbus.becomeMonitor(Crules);
 
-        printf("[" ANSI_COLOR_GREEN "<->" ANSI_COLOR_RESET "] %s: Someone "
-               "else has this dbus interface implemented. Became a monitor and will eavesdrop.\n",
+        printf("[" ANSI_COLOR_GREEN "<->" ANSI_COLOR_RESET "] %s: Something "
+               "listening on this interface. Became monitor, will eavesdrop and feed events.\n",
                interface.c_str());
       } catch (DBus::UnknownInterfaceError& e) {
         printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] %s: "
-               "UNSUPPORTED: Someone else has this dbus interface implemented. Tried to become a monitor in"
+               "UNSUPPORTED: Something has this dbus interface implemented. Tried to become monitor in"
                " order to eavesdrop but your dbus daemon doesn't appear to support that (it's "
                "probably too old).\n", interface.c_str());
       } catch (DBus::AccessDeniedError& e) {
         printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] %s: "
-               "ACCESS DENIED: Someone else has this dbus interface implemented. Tried to become a"
+               "ACCESS DENIED: Something has this dbus interface implemented. Tried to become a"
                " monitor to eavesdrop but was denied access. You might need to give me setuid "
                " (chown root uinhibitd && chmod 4755 uinhibitd). You might need to allow monitoring"
                " in D-Bus config.\n", interface.c_str());
@@ -114,7 +114,7 @@ namespace uinhibit {
         for (auto& str : signalStrings) dbus.addMatch(str.c_str());
 
         printf("[" ANSI_COLOR_GREEN "<-" ANSI_COLOR_RESET "] %s: "
-               "Implementing interface\n", interface.c_str());
+               "Nothing listening on this interface. Implementing to receive events.\n", interface.c_str());
       }
     }
   }
