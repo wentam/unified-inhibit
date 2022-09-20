@@ -27,7 +27,7 @@ using namespace uinhibit;
 THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
            std::function<void(Inhibitor*,Inhibit)> unInhibitCB,
            int32_t forkFD, int32_t forkOutFD) :
-          Inhibitor(inhibitCB, unInhibitCB),
+          Inhibitor(inhibitCB, unInhibitCB, "linux-kernel-wakelock"),
           forkFD(forkFD)
 {
   if (access(WAKE_LOCK_PATH, F_OK) != 0) {

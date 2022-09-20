@@ -22,7 +22,8 @@
 using namespace uinhibit;
 
 THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
-           std::function<void(Inhibitor*,Inhibit)> unInhibitCB) : Inhibitor(inhibitCB, unInhibitCB)
+           std::function<void(Inhibitor*,Inhibit)> unInhibitCB) :
+  Inhibitor(inhibitCB, unInhibitCB, "xautolock")
 {
   // TODO: cleaner way to detect if xautolock is running/exists?
   int32_t r = system("ps aux | grep xautolock | grep -v grep > /dev/null 2>/dev/null");

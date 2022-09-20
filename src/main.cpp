@@ -61,8 +61,11 @@ static void printInhibited() {
 }
 
 static void inhibitCB(Inhibitor* inhibitor, Inhibit inhibit) {
-  printf("Inhibit event type=%d appname='%s' reason='%s'\n", inhibit.type, inhibit.appname.c_str(),
-         inhibit.reason.c_str());
+  printf("Inhibit event type=%d appname='%s' reason='%s' from='%s'\n",
+         inhibit.type,
+         inhibit.appname.c_str(),
+         inhibit.reason.c_str(),
+         inhibitor->name.c_str());
   // Forward to all active inhibitors (other than the originator)
   try {
     for (auto& ai : inhibitors) {
@@ -82,7 +85,10 @@ static void inhibitCB(Inhibitor* inhibitor, Inhibit inhibit) {
 }
 
 static void unInhibitCB(Inhibitor* inhibitor, Inhibit inhibit) {
-  printf("UnInhibit event type=%d appname='%s'\n", inhibit.type, inhibit.appname.c_str());
+  printf("UnInhibit event type=%d appname='%s' from='%s'\n",
+         inhibit.type,
+         inhibit.appname.c_str(),
+         inhibitor->name.c_str());
   // Forward to all active inhibitors (other than the originator)
   try {
     if (releasePlan.contains(inhibit.id)) {

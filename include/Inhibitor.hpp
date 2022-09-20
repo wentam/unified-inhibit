@@ -88,7 +88,10 @@ namespace uinhibit {
   class Inhibitor {
     public:
       Inhibitor(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
-                std::function<void(Inhibitor*,Inhibit)> unInhibitCB);
+                std::function<void(Inhibitor*,Inhibit)> unInhibitCB,
+                std::string name);
+
+      std::string name;
 
       struct ReturnObject {
         ReturnObject(std::coroutine_handle<> h) : handle{h} {}
@@ -260,6 +263,7 @@ namespace uinhibit {
 
       DBusInhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
                     std::function<void(Inhibitor*, Inhibit)> unInhibitCB,
+                    std::string name,
                     std::string interface,
                     DBusBusType busType,
                     std::vector<DBusMethodCB> myMethods,
@@ -296,6 +300,7 @@ namespace uinhibit {
     public:
       SimpleDBusInhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
                           std::function<void(Inhibitor*, Inhibit)> unInhibitCB,
+                          std::string name,
                           std::vector<DBusMethodCB> myMethods,
                           std::vector<DBusSignalCB> mySignals,
                           std::string interface,
@@ -336,7 +341,9 @@ namespace uinhibit {
     public:
       FreedesktopScreenSaverInhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
                                       std::function<void(Inhibitor*, Inhibit)> unInhibitCB) :
-        SimpleDBusInhibitor(inhibitCB, unInhibitCB, {}, {},
+        SimpleDBusInhibitor(inhibitCB, unInhibitCB,
+                            "org.freedesktop.ScreenSaver",
+                            {}, {},
                             "org.freedesktop.ScreenSaver",
                             "/ScreenSaver",
                             InhibitType::SCREENSAVER,

@@ -30,13 +30,14 @@ namespace uinhibit {
   DBusInhibitor::DBusInhibitor(
     std::function<void(Inhibitor*, Inhibit)> inhibitCB,
     std::function<void(Inhibitor*, Inhibit)> unInhibitCB,
+    std::string name,
     std::string interface,
     DBusBusType busType,
     std::vector<DBusMethodCB> myMethods,
     std::vector<DBusSignalCB> mySignals
   ) 
   : 
-    Inhibitor(inhibitCB, unInhibitCB),
+    Inhibitor(inhibitCB, unInhibitCB, name),
     dbus(busType),
     myMethods(myMethods),
     mySignals(mySignals),

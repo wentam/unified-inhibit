@@ -23,7 +23,8 @@
 using namespace uinhibit;
 
 THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
-           std::function<void(Inhibitor*,Inhibit)> unInhibitCB) : Inhibitor(inhibitCB, unInhibitCB)
+           std::function<void(Inhibitor*,Inhibit)> unInhibitCB) :
+  Inhibitor(inhibitCB, unInhibitCB, "xidlehook")
 {
   // TODO: cleaner way to detect if xidlehook is running/exists?
   int32_t r = system("ps aux | grep xidlehook | grep -v grep > /dev/null 2>/dev/null");

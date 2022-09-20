@@ -36,6 +36,7 @@ static std::vector<T> catVec(std::vector<T> a, std::vector<T> b) {
 
 THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
            std::function<void(Inhibitor*, Inhibit)> unInhibitCB,
+           std::string name,
            std::vector<DBusMethodCB> myMethods,
            std::vector<DBusSignalCB> mySignals,
            std::string interface,
@@ -43,7 +44,7 @@ THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
            InhibitType inhibitType,
            std::string extraIntrospect)
   : DBusInhibitor
-    (inhibitCB, unInhibitCB, interface, DBUS_BUS_SESSION,
+    (inhibitCB, unInhibitCB, name, interface, DBUS_BUS_SESSION,
      catVec<DBusMethodCB>(
      {
        {interface, "Inhibit", METHOD_CAST &THIS::handleInhibitMsg, "*"},

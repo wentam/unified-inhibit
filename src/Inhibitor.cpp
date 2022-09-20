@@ -21,8 +21,9 @@ static uint64_t lastInstanceId = 0;
 namespace uinhibit {
 
   Inhibitor::Inhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
-                       std::function<void(Inhibitor*, Inhibit)> unInhibitCB) : 
-    inhibitCB(inhibitCB), unInhibitCB(unInhibitCB) {
+                       std::function<void(Inhibitor*, Inhibit)> unInhibitCB,
+                       std::string name) :
+    name(name), inhibitCB(inhibitCB), unInhibitCB(unInhibitCB) {
       lastInstanceIdMutex.lock();
       this->instanceId = lastInstanceId++;
       lastInstanceIdMutex.unlock();

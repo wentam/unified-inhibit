@@ -23,7 +23,7 @@ using namespace uinhibit;
 
 THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
            std::function<void(Inhibitor*,Inhibit)> unInhibitCB,
-           Args args) : Inhibitor(inhibitCB, unInhibitCB)
+           Args args) : Inhibitor(inhibitCB, unInhibitCB, "user-commands")
 {
   // TODO test with empty strings as commands, make sure no crashy
 

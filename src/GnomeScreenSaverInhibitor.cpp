@@ -31,7 +31,7 @@ using namespace uinhibit;
 THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
            std::function<void(Inhibitor*, Inhibit)> unInhibitCB)
   : SimpleDBusInhibitor
-    (inhibitCB, unInhibitCB,
+    (inhibitCB, unInhibitCB, INTERFACE,
      {
        {INTERFACE, "SimulateUserActivity", METHOD_CAST &THIS::handleSimActivityMsg, "*"},
      },

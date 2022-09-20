@@ -43,7 +43,7 @@ using namespace uinhibit;
 THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
            std::function<void(Inhibitor*, Inhibit)> unInhibitCB)
   : DBusInhibitor
-    (inhibitCB, unInhibitCB, DBUSNAME, DBUS_BUS_SYSTEM,
+    (inhibitCB, unInhibitCB, DBUSNAME, DBUSNAME, DBUS_BUS_SYSTEM,
      {
        {INTERFACE, "Inhibit", METHOD_CAST &THIS::handleInhibitMsg, "*"},
        {INTERFACE, "ListInhibitors", METHOD_CAST &THIS::handleListInhibitorsMsg, "*"},
