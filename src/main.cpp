@@ -32,18 +32,9 @@ extern char **environ;
 // * when logging inhibit state change and there are active inhibits, list the inhibitors 
 //   responsible
 // * log levels
-// * CLI argument parsing
-// * man page
 // * optional ability to write the current inhibit state to a file
 // * optional ability to forward screensaver locks to suspend and vice-versa
 // * ability to ignore inhibits from certain appnames (--ignore steam)
-
-// A good set of tests for each inhibitor:
-// * When something else implements, we start monitoring
-// * When something else dosen't implement, we do
-// * inhibits/uninhibits in both monitor/implement mode
-// * application crash with kill -9 releases the inhibit in both monitor and implement mode
-// * when in monitor mode and the existing implementation dissappears, we jump in
 
 using namespace uinhibit;
 
