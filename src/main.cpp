@@ -38,9 +38,6 @@ extern char **environ;
 
 using namespace uinhibit;
 
-std::string func1 = "";
-std::string func2 = "";
-
 static std::vector<Inhibitor*> inhibitors;
 static InhibitType lastInhibitType = InhibitType::NONE;
 static std::map<InhibitID, std::vector<std::pair<Inhibitor*, InhibitID>>> releasePlan;
@@ -60,14 +57,6 @@ static void printInhibited() {
            ((i & InhibitType::SCREENSAVER) > 0),
            ((i & InhibitType::SUSPEND) > 0));
     lastInhibitType = i;
-    if (i != InhibitType::NONE && func1!="") {
-      printf("Running inhibit command: %s\n", func1.c_str());
-      [[maybe_unused]]int r = system(func1.c_str());
-    };
-    if (i == InhibitType::NONE && func2!="") {
-      printf("Running uninhibit command: %s\n", func2.c_str());
-      [[maybe_unused]]int r = system(func2.c_str());
-    };
   }
 }
 
@@ -123,11 +112,6 @@ static std::string cleanDisplayEnv(std::string display) {
   return cleanDisplay;
 }
 
-struct Args {
-  std::set<char> flags;
-  std::map<std::string, std::vector<std::string>> params;
-};
-
 static Args parseArgs(int argc, char* argv[]) {
   Args ret = {};
   std::string lastArg;
@@ -175,17 +159,17 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
        );
   puts("===============================================================================");
 
+  // Parse args/user input
+  auto args = parseArgs(argc, argv);
+
+  if (args.params.contains("version")) exit(0);
+  if (args.params.contains("help") || args.flags.contains('h')) exit(system("man uinhibitd"));
+
   puts("\n[<-] : Listening for events from interface");
   puts("[->] : Sending events to interface");
   puts("[<->]: Bidirectional");
   puts("[x]  : Doing nothing\n");
 
-  // Parse args/user input
-  auto args = parseArgs(argc, argv);
-
-  if (args.params.contains("version")) exit(0);
-
-  if (args.params.contains("help") || args.flags.contains('h')) exit(system("man uinhibitd"));
 
   // Clone environment to restore after setuid stuff
   std::vector<std::string> startEnv;
@@ -250,22 +234,6 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
     putenv(envMem.back());
   }
 
-  if (args.params.contains("inhibit-action")) {
-    func1 = strMerge(args.params.at("inhibit-action"),' ');
-  }
-
-  if (args.params.contains("ia")) {
-    func1 = strMerge(args.params.at("ia"),' ');
-  }
-
-  if (args.params.contains("uninhibit-action")) {
-    func2 = strMerge(args.params.at("uninhibit-action"),' ');
-  }
-
-  if (args.params.contains("uia")) {
-    func2 = strMerge(args.params.at("uia"),' ');
-  }
-
   FreedesktopScreenSaverInhibitor i1(inhibitCB, unInhibitCB); inhibitors.push_back(&i1);
   FreedesktopPowerManagerInhibitor i2(inhibitCB, unInhibitCB); inhibitors.push_back(&i2);
   GnomeSessionManagerInhibitor i3(inhibitCB, unInhibitCB); inhibitors.push_back(&i3);
@@ -274,6 +242,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
   LinuxKernelInhibitor i7(inhibitCB, unInhibitCB, inPipe[1], outPipe[0]); inhibitors.push_back(&i7);
   XautolockInhibitor i8(inhibitCB, unInhibitCB); inhibitors.push_back(&i8);
   XidlehookInhibitor i9(inhibitCB, unInhibitCB); inhibitors.push_back(&i9);
+  UserCommandsInhibitor i10(inhibitCB, unInhibitCB, args); inhibitors.push_back(&i10);
 
   // Run inhibitors
   // Security note: it is critical we have dropped privileges before this point, as we will be

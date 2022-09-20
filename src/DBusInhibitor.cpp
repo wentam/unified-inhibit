@@ -181,8 +181,8 @@ namespace uinhibit {
       this->poll();
       co_await std::suspend_always();
     }
-    catch (DBus::DisconnectedError& e) { 
-      printf(ANSI_COLOR_RED "DBus disconnection for interface %s. Trying to reconnect..." 
+    catch (DBus::DisconnectedError& e) {
+      printf(ANSI_COLOR_RED "DBus disconnection for interface %s. Trying to reconnect..."
              ANSI_COLOR_RESET, this->interface.c_str());
 
       // TODO: we need to re-set ourselves up (as in what the constructor does)
@@ -191,7 +191,7 @@ namespace uinhibit {
 
       bool fail = false;
       try {
-        dbus.reconnect();     
+        dbus.reconnect();
       } catch (...) { fail = true; }
 
       if (!fail) printf(ANSI_COLOR_GREEN "reconnected\n" ANSI_COLOR_RESET);
@@ -203,7 +203,7 @@ namespace uinhibit {
         break;
       }
     }
-    catch (std::exception &e) { 
+    catch (std::exception &e) {
       printf("Unhandled exception %s: %s\n", currentExceptionTypeName(), e.what());
     }
     catch (...) { std::terminate(); }

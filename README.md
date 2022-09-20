@@ -162,7 +162,9 @@ uinhibitd --inhibit-action "some-auto-locker --disable" \
 Disables the auto locker while there is an active inhibit. This will capture the inhibit state from
 all interfaces.
 
---ia/--uia are shorthand for these flags. Inhibit-type specific flags are planned.
+--ia/--uia are shorthand for these flags. You can also specify something like
+--screensaver-inhibit-action to only act on screensaver inhibits. See man page for details.
+
 
 ## Donations
 Much of my time is volunteered towards open-source projects to improve the free software ecosystem

@@ -17,6 +17,8 @@
 #include <unistd.h>
 #include <string>
 #include <vector>
+#include <set>
+#include <map>
 
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 1
@@ -51,7 +53,7 @@ static char* version() {
 static std::string strMerge(std::vector<std::string> strings, char sep) {
   std::string ret;
   for (auto str : strings) { for (auto c : str) ret.push_back(c); ret.push_back(sep); }
-  ret.pop_back();
+  if (ret.size() > 0) ret.pop_back();
   return ret;
 };
 
@@ -59,4 +61,9 @@ static std::string strMerge(std::vector<std::string> strings) {
   std::string ret;
   for (auto str : strings) { for (auto c : str) ret.push_back(c); }
   return ret;
+};
+
+struct Args {
+  std::set<char> flags;
+  std::map<std::string, std::vector<std::string>> params;
 };

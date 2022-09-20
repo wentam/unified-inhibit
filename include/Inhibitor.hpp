@@ -28,6 +28,7 @@
 #include <coroutine>
 #include <thread>
 #include <set>
+#include "util.hpp"
 
 namespace uinhibit {
   class InhibitRequestUnsupportedTypeException : std::exception {};
@@ -42,6 +43,35 @@ namespace uinhibit {
     NONE = 0,
     SCREENSAVER = 0b00000001,
     SUSPEND     = 0b00000010,
+  };
+
+  static std::string inhibitTypeToString(InhibitType t) {
+    if (t == InhibitType::NONE) return "none";
+    else if ((t & InhibitType::SCREENSAVER) > 0) return "screensaver";
+    else if ((t & InhibitType::SUSPEND) > 0) return "suspend";
+    return "";
+  };
+
+  static std::vector<std::string> inhibitTypeStrings() {
+    std::vector<std::string> ret;
+    for(int i = 0; i <= 100; i++) {
+      std::string str = inhibitTypeToString((InhibitType)(InhibitType::SCREENSAVER << i));
+      if (str == "") break;
+      ret.push_back(str);
+    }
+    return ret;
+  };
+
+  static InhibitType stringToInhibitType(std::string str) {
+    if (str == "screensaver") return InhibitType::SCREENSAVER;
+    else if (str == "suspend") return InhibitType::SUSPEND;
+    return InhibitType::NONE;
+  };
+
+  static std::vector<InhibitType> inhibitTypes() {
+    std::vector<InhibitType> ret;
+    for (auto str : inhibitTypeStrings()) ret.push_back(stringToInhibitType(str));
+    return ret;
   };
 
   struct InhibitRequest {
@@ -188,6 +218,29 @@ namespace uinhibit {
     private:
       InhibitType lastInhibited = InhibitType::NONE;
       bool ok = false;
+  };
+
+
+  class UserCommandsInhibitor: public Inhibitor {
+    public:
+      UserCommandsInhibitor(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
+                            std::function<void(Inhibitor*,Inhibit)> unInhibitCB,
+                            Args args);
+
+    protected:
+      ReturnObject start();
+      Inhibit doInhibit(InhibitRequest) override;
+      void doUnInhibit(InhibitID) override {};
+      void handleInhibitEvent(Inhibit inhibit) override {};
+      void handleUnInhibitEvent(Inhibit inhibit) override {};
+      void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) override;
+
+    private:
+      InhibitType lastInhibited = InhibitType::NONE;
+      bool ok = false;
+
+      std::map<InhibitType,std::string> cmds;
+      std::map<InhibitType,std::string> uncmds;
   };
 
   class DBusInhibitor : public Inhibitor {

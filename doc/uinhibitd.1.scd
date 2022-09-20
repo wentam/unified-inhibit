@@ -39,10 +39,25 @@ Single-letter flags can be bundled (-abcd)
 # PARAMETERS
 
 *--inhibit-action* "_cmd_", *--ia* "_cmd_"
-	Shell command to run every time the state has changed to inhibited (of any inhibit type)
+	Shell command to run every time the state has changed to inhibited (of any
+	inhibit type)
 
 *--uninhibit-action* "_cmd_", *--uia* "_cmd_"
-	Shell command to run every time the state has changed to uninhibited (all inhibit types)
+	Shell command to run every time the state has changed to uninhibited (all
+	inhibit types)
+
+*--(type)-inhibit-action* "_cmd_", *--(type)-ia* "_cmd_"
+	Shell command to run every time the state has changed to inhibited of
+	specified type. See INHIBIT TYPES.
+
+*--(type)-uninhibit-action* "_cmd_", *--(type)-uia* "_cmd_"
+	Shell command to run every time the state has changed to uninhibited of
+	specified type. See INHIBIT TYPES.
+
+# INHIBIT TYPES
+
+- screensaver
+- suspend
 
 # AUTHOR
 

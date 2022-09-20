@@ -30,7 +30,6 @@ THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
   r = system("xautolock -version > /dev/null 2> /dev/null");
   bool xautolockExists = (r == 0);
 
-
   if (!xautolockRunning) {
     printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] xautolock: "
            "Doesn't look like xautolock is running. \n");
@@ -54,7 +53,7 @@ void THIS::handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) {
   // We only care when screensaver type has changed
   if ((inhibited & InhibitType::SCREENSAVER) == (lastInhibited & InhibitType::SCREENSAVER)) return;
 
-  if (inhibited & InhibitType::SCREENSAVER) {
+  if ((inhibited & InhibitType::SCREENSAVER) > 0) {
     int32_t r = system("xautolock -disable > /dev/null 2> /dev/null");
     if (r != 0) puts(ANSI_COLOR_YELLOW "Warning: failed to disable xautolock (return code)" ANSI_COLOR_RESET);
   } else {

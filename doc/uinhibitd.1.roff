@@ -5,7 +5,7 @@
 .nh
 .ad l
 .\" Begin generated content:
-.TH "uinhibitd" "1" "2022-09-19"
+.TH "uinhibitd" "1" "2022-09-20"
 .P
 .SH NAME
 .P
@@ -52,14 +52,50 @@ Prints version information and exits
 .P
 \fB--inhibit-action\fR "\fIcmd\fR", \fB--ia\fR "\fIcmd\fR"
 .RS 4
-Shell command to run every time the state has changed to inhibited (of any inhibit type)
+Shell command to run every time the state has changed to inhibited (of any
+inhibit type)
 .P
 .RE
 \fB--uninhibit-action\fR "\fIcmd\fR", \fB--uia\fR "\fIcmd\fR"
 .RS 4
-Shell command to run every time the state has changed to uninhibited (all inhibit types)
+Shell command to run every time the state has changed to uninhibited (all
+inhibit types)
 .P
 .RE
+\fB--(type)-inhibit-action\fR "\fIcmd\fR", \fB--(type)-ia\fR "\fIcmd\fR"
+.RS 4
+Shell command to run every time the state has changed to inhibited of
+specified type.\& See INHIBIT TYPES.\&
+.P
+.RE
+\fB--(type)-uninhibit-action\fR "\fIcmd\fR", \fB--(type)-uia\fR "\fIcmd\fR"
+.RS 4
+Shell command to run every time the state has changed to uninhibited of
+specified type.\& See INHIBIT TYPES.\&
+.P
+.RE
+.SH INHIBIT TYPES
+.P
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.IP \(bu 4
+.\}
+screensaver
+.RE
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.IP \(bu 4
+.\}
+suspend
+
+.RE
+.P
 .SH AUTHOR
 .P
 Written by Matt Egeler

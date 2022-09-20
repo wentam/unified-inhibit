@@ -61,7 +61,7 @@ void THIS::handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) {
   // We only care when screensaver type has changed
   if ((inhibited & InhibitType::SCREENSAVER) == (lastInhibited & InhibitType::SCREENSAVER)) return;
 
-  if (inhibited & InhibitType::SCREENSAVER) {
+  if ((inhibited & InhibitType::SCREENSAVER) > 0) {
     int32_t r = system("xidlehook-client --socket " SOCKETPATH " control --action Disable > /dev/null 2> /dev/null");
     if (r != 0) puts(ANSI_COLOR_YELLOW "Warning: failed to disable xidlehook (return code)" ANSI_COLOR_RESET);
   } else {
