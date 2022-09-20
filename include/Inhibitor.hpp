@@ -170,6 +170,24 @@ namespace uinhibit {
       void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) override;
     private:
       InhibitType lastInhibited = InhibitType::NONE;
+      bool ok = false;
+  };
+
+  class XidlehookInhibitor: public Inhibitor {
+    public:
+      XidlehookInhibitor(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
+                         std::function<void(Inhibitor*,Inhibit)> unInhibitCB);
+
+    protected:
+      ReturnObject start();
+      Inhibit doInhibit(InhibitRequest) override;
+      void doUnInhibit(InhibitID) override {};
+      void handleInhibitEvent(Inhibit inhibit) override {};
+      void handleUnInhibitEvent(Inhibit inhibit) override {};
+      void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) override;
+    private:
+      InhibitType lastInhibited = InhibitType::NONE;
+      bool ok = false;
   };
 
   class DBusInhibitor : public Inhibitor {

@@ -282,6 +282,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
   CinnamonScreenSaverInhibitor i6(inhibitCB, unInhibitCB); inhibitors.push_back(&i6);
   LinuxKernelInhibitor i7(inhibitCB, unInhibitCB, inPipe[1], outPipe[0]); inhibitors.push_back(&i7);
   XautolockInhibitor i8(inhibitCB, unInhibitCB); inhibitors.push_back(&i8);
+  XidlehookInhibitor i9(inhibitCB, unInhibitCB); inhibitors.push_back(&i9);
 
   // Run inhibitors
   // Security note: it is critical we have dropped privileges before this point, as we will be

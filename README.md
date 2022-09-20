@@ -97,16 +97,17 @@ following D-Bus rules in /etc/dbus-1/system.d/root-can-own-login1.conf:
 ```
 
 ## Supported inhibitors
-Inhibitor | Protocol | Directionality supported
----|---|---
-org.freedesktop.login1 | D-Bus | <->
-org.freedesktop.ScreenSaver | D-Bus | <->
-org.freedesktop.PowerManager | D-Bus | <->
-org.gnome.SessionManager | D-Bus | <->
-org.gnome.ScreenSaver | D-Bus | <->
-org.cinnamon.ScreenSaver | D-Bus | <->
-Linux kernel wakelock | sysfs | <->
-xautolock | shell | ->
+Inhibitor | Protocol | Directionality supported | Notes
+---|---|---|---
+org.freedesktop.login1 | D-Bus | <-> | Probably need to chown root && chmod 4775 uinhibitd (setuid). Might need to configure D-Bus.
+org.freedesktop.ScreenSaver | D-Bus | <-> |
+org.freedesktop.PowerManager | D-Bus | <-> |
+org.gnome.SessionManager | D-Bus | <-> |
+org.gnome.ScreenSaver | D-Bus | <-> |
+org.cinnamon.ScreenSaver | D-Bus | <-> |
+Linux kernel wakelock | sysfs | <-> | Probably need to chown root && chmod 4775 uinhibitd (setuid)
+xautolock | shell | -> |
+xidlehook | shell | -> | Start xidlehook with --socket /tmp/xidlehook.sock
 
 More are out there. Please open issues for missing interfaces!
 

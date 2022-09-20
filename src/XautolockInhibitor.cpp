@@ -33,13 +33,14 @@ THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
 
   if (!xautolockRunning) {
     printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] xautolock: "
-           "doesn't look like xautolock is running. \n");
+           "Doesn't look like xautolock is running. \n");
   } else if (!xautolockExists) {
     printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] xautolock: "
            "xautolock looks like it's running, but we couldn't find the xautolock command. \n");
   } else {
     printf("[" ANSI_COLOR_GREEN "->" ANSI_COLOR_RESET "] xautolock: "
            "Feeding events with xautolock -disable/enable\n");
+    this->ok = true;
   }
 }
 
@@ -48,16 +49,17 @@ Inhibitor::ReturnObject THIS::start() {
 }
 
 void THIS::handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) {
+  if (!this->ok) return;
   // Just because the inhibit state changed doesn't mean the screensaver type has changed.
   // We only care when screensaver type has changed
   if ((inhibited & InhibitType::SCREENSAVER) == (lastInhibited & InhibitType::SCREENSAVER)) return;
 
   if (inhibited & InhibitType::SCREENSAVER) {
     int32_t r = system("xautolock -disable > /dev/null 2> /dev/null");
-    if (r != 0) puts(ANSI_COLOR_YELLOW "Warning: failed to disable xautolock" ANSI_COLOR_RESET);
+    if (r != 0) puts(ANSI_COLOR_YELLOW "Warning: failed to disable xautolock (return code)" ANSI_COLOR_RESET);
   } else {
     int32_t r = system("xautolock -enable > /dev/null 2> /dev/null");
-    if (r != 0) puts(ANSI_COLOR_YELLOW "Warning: failed to enable xautolock" ANSI_COLOR_RESET);
+    if (r != 0) puts(ANSI_COLOR_YELLOW "Warning: failed to enable xautolock (return code)" ANSI_COLOR_RESET);
   }
 
   lastInhibited = inhibited;
