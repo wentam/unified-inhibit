@@ -97,15 +97,16 @@ following D-Bus rules in /etc/dbus-1/system.d/root-can-own-login1.conf:
 ```
 
 ## Supported inhibitors
-Inhibitor | Protocol
----|---
-org.freedesktop.login1 | D-Bus
-org.freedesktop.ScreenSaver | D-Bus
-org.freedesktop.PowerManager | D-Bus
-org.gnome.SessionManager | D-Bus
-org.gnome.ScreenSaver | D-Bus
-org.cinnamon.ScreenSaver | D-Bus
-Linux kernel wakelock | sysfs
+Inhibitor | Protocol | Directionality supported
+---|---|---
+org.freedesktop.login1 | D-Bus | <->
+org.freedesktop.ScreenSaver | D-Bus | <->
+org.freedesktop.PowerManager | D-Bus | <->
+org.gnome.SessionManager | D-Bus | <->
+org.gnome.ScreenSaver | D-Bus | <->
+org.cinnamon.ScreenSaver | D-Bus | <->
+Linux kernel wakelock | sysfs | <->
+xautolock | shell | ->
 
 More are out there. Please open issues for missing interfaces!
 
@@ -153,12 +154,12 @@ useful for users of lightweight window managers that want to tie in their screen
 auto-suspend:
 
 ```
-uinhibitd --inhibit-action "xautolock -disable" \
-          --uninhibit-action "xautolock -enable"
+uinhibitd --inhibit-action "some-auto-locker --disable" \
+          --uninhibit-action "some-auto-locker --enable"
 ```
 
-Disables xautolocker while there is an active inhibit. This will capture the inhibit state from all
-interfaces.
+Disables the auto locker while there is an active inhibit. This will capture the inhibit state from
+all interfaces.
 
 --ia/--uia are shorthand for these flags. Inhibit-type specific flags are planned.
 

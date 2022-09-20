@@ -135,7 +135,7 @@ namespace uinhibit {
       struct _InhibitID {
         uint64_t instanceID;
         char lockName[1024];
-      };  
+      };
 
       Inhibit doInhibit(InhibitRequest) override;
       void doUnInhibit(InhibitID) override;
@@ -154,6 +154,22 @@ namespace uinhibit {
       int32_t forkFD = -1;
 
       std::set<InhibitID> ourInhibits;
+  };
+
+  class XautolockInhibitor: public Inhibitor {
+    public:
+      XautolockInhibitor(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
+                         std::function<void(Inhibitor*,Inhibit)> unInhibitCB);
+
+    protected:
+      ReturnObject start();
+      Inhibit doInhibit(InhibitRequest) override;
+      void doUnInhibit(InhibitID) override {};
+      void handleInhibitEvent(Inhibit inhibit) override {};
+      void handleUnInhibitEvent(Inhibit inhibit) override {};
+      void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) override;
+    private:
+      InhibitType lastInhibited = InhibitType::NONE;
   };
 
   class DBusInhibitor : public Inhibitor {

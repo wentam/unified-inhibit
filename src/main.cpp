@@ -176,17 +176,18 @@ static Args parseArgs(int argc, char* argv[]) {
 }
 
 int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
-  puts("------------------------------------");
+  puts("===============================================================================");
   printf("unified-inhibit v%s\n\n", version());
   puts(
        "Built with volunteered time. You can support my work at"
        " https://liberapay.com/wentam"
        );
-  puts("------------------------------------");
+  puts("===============================================================================");
 
-  puts("\n <-: Listening for events");
-  puts(" ->: Sending events");
-  puts("<->: Bidirectional\n");
+  puts("\n[<-] : Listening for events from interface");
+  puts("[->] : Sending events to interface");
+  puts("[<->]: Bidirectional");
+  puts("[x]  : Doing nothing\n");
 
   // Parse args/user input
   auto args = parseArgs(argc, argv);
@@ -280,12 +281,17 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
   GnomeScreenSaverInhibitor i5(inhibitCB, unInhibitCB); inhibitors.push_back(&i5);
   CinnamonScreenSaverInhibitor i6(inhibitCB, unInhibitCB); inhibitors.push_back(&i6);
   LinuxKernelInhibitor i7(inhibitCB, unInhibitCB, inPipe[1], outPipe[0]); inhibitors.push_back(&i7);
+  XautolockInhibitor i8(inhibitCB, unInhibitCB); inhibitors.push_back(&i8);
 
   // Run inhibitors
   // Security note: it is critical we have dropped privileges before this point, as we will be
   // running user-inputted commands.
   std::vector<Inhibitor::ReturnObject> ros;
   for (auto& inhibitor : inhibitors) ros.push_back(inhibitor->start());
+
+
+  puts("\n------------- Started successfully --------------");
+
   while(1) for (auto& r : ros) {r.handle.resume(); fflush(stdout); }
 
   close(inPipe[1]);
