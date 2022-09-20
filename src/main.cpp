@@ -184,6 +184,9 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
        );
   puts("------------------------------------");
 
+  puts("\n <-: Listening for events");
+  puts(" ->: Sending events");
+  puts("<->: Bidirectional\n");
 
   // Parse args/user input
   auto args = parseArgs(argc, argv);

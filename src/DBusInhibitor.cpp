@@ -73,7 +73,7 @@ namespace uinhibit {
         // TODO: becomeMonitor should provide an overloaded version taking a vector of std::string
         dbus.becomeMonitor(Crules);
 
-        printf("[" ANSI_COLOR_YELLOW "-" ANSI_COLOR_RESET "] %s: Someone "
+        printf("[" ANSI_COLOR_GREEN "<->" ANSI_COLOR_RESET "] %s: Someone "
                "else has this dbus interface implemented. Became a monitor and will eavesdrop.\n",
                interface.c_str());
       } catch (DBus::UnknownInterfaceError& e) {
@@ -105,15 +105,14 @@ namespace uinhibit {
                "implement this interface, but failed to obtain the interface name.\n",
                interface.c_str());
       } else {
-
         std::vector<std::string> signalStrings;
 
-        for (auto signal : mySignals) 
+        for (auto signal : mySignals)
           signalStrings.push_back("type='signal',interface='"+signal.interface+"',member='"+signal.member+"'");
 
         for (auto& str : signalStrings) dbus.addMatch(str.c_str());
 
-        printf("[" ANSI_COLOR_GREEN "✓" ANSI_COLOR_RESET "] %s: "
+        printf("[" ANSI_COLOR_GREEN "<-" ANSI_COLOR_RESET "] %s: "
                "Implementing interface\n", interface.c_str());
       }
     }

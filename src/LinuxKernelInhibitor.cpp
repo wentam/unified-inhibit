@@ -30,12 +30,12 @@ THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
           Inhibitor(inhibitCB, unInhibitCB),
           forkFD(forkFD)
 {
-  if (access(WAKE_LOCK_PATH, F_OK) != 0) {  
+  if (access(WAKE_LOCK_PATH, F_OK) != 0) {
     printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] Linux kernel wakelock: "
            WAKE_LOCK_PATH " doesn't exist. You probably don't have CONFIG_PM_WAKELOCKS enabled"
            " in your kernel.\n");
     ok = false;
-  } else if (access(WAKE_UNLOCK_PATH, F_OK) != 0) { 
+  } else if (access(WAKE_UNLOCK_PATH, F_OK) != 0) {
     printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] Linux kernel wakelock: "
            WAKE_UNLOCK_PATH " doesn't exist. You probably don't have CONFIG_PM_WAKELOCKS enabled"
            " in your kernel.\n");
@@ -55,7 +55,7 @@ THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
   }
 
   if (ok)
-    printf("[" ANSI_COLOR_GREEN "✓" ANSI_COLOR_RESET "] Linux kernel wakelock\n");
+    printf("[" ANSI_COLOR_GREEN "<->" ANSI_COLOR_RESET "] Linux kernel wakelock\n");
 };
 
 Inhibitor::ReturnObject THIS::start() {
