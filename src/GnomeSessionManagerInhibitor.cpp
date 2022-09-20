@@ -317,7 +317,7 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 void THIS::doUnInhibit(InhibitID id) {
   auto idStruct = reinterpret_cast<_InhibitID*>(&id[0]);
   if (this->monitor) {
-    callDbus->newMethodCall(INTERFACE, PATH, INTERFACE, "UnInhibit")
+    callDbus->newMethodCall(INTERFACE, PATH, INTERFACE, "Uninhibit")
         .appendArgs(DBUS_TYPE_UINT32, &(idStruct->cookie), DBUS_TYPE_INVALID)
         ->send();
   }
