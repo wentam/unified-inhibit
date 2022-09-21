@@ -30,6 +30,11 @@
 #include <set>
 #include "util.hpp"
 
+
+#ifdef BUILDFLAG_X11
+#include <X11/Xlib.h>
+#endif
+
 namespace uinhibit {
   class InhibitRequestUnsupportedTypeException : std::exception {};
   class InhibitNoResponseException : std::exception {};
@@ -189,7 +194,7 @@ namespace uinhibit {
       std::set<InhibitID> ourInhibits;
   };
 
-  class XautolockInhibitor: public Inhibitor {
+  class XautolockInhibitor : public Inhibitor {
     public:
       XautolockInhibitor(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
                          std::function<void(Inhibitor*,Inhibit)> unInhibitCB);
@@ -201,10 +206,32 @@ namespace uinhibit {
       void handleInhibitEvent(Inhibit inhibit) override {};
       void handleUnInhibitEvent(Inhibit inhibit) override {};
       void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) override;
+
     private:
       InhibitType lastInhibited = InhibitType::NONE;
       bool ok = false;
   };
+
+#ifdef BUILDFLAG_X11
+  class DPMSInhibitor : public Inhibitor {
+    public:
+      DPMSInhibitor(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
+                    std::function<void(Inhibitor*,Inhibit)> unInhibitCB);
+
+    protected:
+      ReturnObject start();
+      Inhibit doInhibit(InhibitRequest) override;
+      void doUnInhibit(InhibitID) override {};
+      void handleInhibitEvent(Inhibit inhibit) override {};
+      void handleUnInhibitEvent(Inhibit inhibit) override {};
+      void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) override;
+
+    private:
+      InhibitType lastInhibited = InhibitType::NONE;
+      bool ok = false;
+      Display *dpy;
+  };
+#endif
 
   class XidlehookInhibitor: public Inhibitor {
     public:

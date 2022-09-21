@@ -12,13 +12,13 @@
     in rec {
       devShells.default = pkgs.gcc12Stdenv.mkDerivation {
         name = "build";
-        buildInputs = [ pkgs.dbus ];
+        buildInputs = [ pkgs.dbus pkgs.xorg.libX11 pkgs.xorg.libXext ];
         nativeBuildInputs = [ pkgs.pkgconf pkgs.scdoc ];
       };
       packages.default = pkgs.stdenv.mkDerivation {
         name="unified-inhibit";
         src = ./.;
-        buildInputs = [ pkgs.dbus ];
+        buildInputs = [ pkgs.dbus pkgs.xorg.libX11 pkgs.xorg.libXext ];
         nativeBuildInputs = [ pkgs.pkgconf ];
         doCheck = true;
         buildPhase = ''make -j12 prefix=$out'';

@@ -1,7 +1,17 @@
+# - User settings -
 prefix = /usr/local/
+X11 ?=1
+# -----------------
+
 INCLUDE = -Iinclude/ -I. $(shell pkgconf dbus-1 --cflags)
 CXXFLAGS = ${INCLUDE} -pipe -std=c++20 -pedantic -Wextra -Wall -Wno-maybe-uninitialized -Wno-unused-function -Wno-sign-compare -Wno-unused-parameter -Wunused-result -fcoroutines
 LINK = -ldbus-1
+
+ifeq "$(X11)" "1"
+LINK += -lX11 -lXext
+CXXFLAGS += -DBUILDFLAG_X11
+endif
+
 CXX = g++
 
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
