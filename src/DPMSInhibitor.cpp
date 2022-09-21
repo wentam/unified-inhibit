@@ -20,24 +20,24 @@
 #include "util.hpp"
 
 #include <X11/Xlib.h>
-#include <X11/extensions/dpms.h>
+#include <X11/extensions/scrnsaver.h>
 
-#define THIS DPMSInhibitor
+#define THIS X11DPMSScreensaverInhibitor
 
 using namespace uinhibit;
 
 THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
            std::function<void(Inhibitor*,Inhibit)> unInhibitCB) :
-  Inhibitor(inhibitCB, unInhibitCB, "x11-dpms")
+  Inhibitor(inhibitCB, unInhibitCB, "x11-dpms-xscreensaver")
 {
   if(!(this->dpy = XOpenDisplay(NULL))) {
-    printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] X11-dpms (screen blanking): "
+    printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] X11-dpms+xscreensaver: "
            "Cannot open display '%s'.\n", XDisplayName(NULL));
     return;
   }
 
-  printf("[" ANSI_COLOR_GREEN "->" ANSI_COLOR_RESET "] X11-dpms (screen blanking): "
-         "Feeding events, will disable screen blanking upon screensaver inhibit.\n");
+  printf("[" ANSI_COLOR_GREEN "->" ANSI_COLOR_RESET "] X11-dpms+xscreensaver: "
+         "Feeding events, will disable screen blanking and xscreensaver upon screensaver inhibit.\n");
   this->ok = true;
 }
 
@@ -52,10 +52,10 @@ void THIS::handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) {
   if ((inhibited & InhibitType::SCREENSAVER) == (lastInhibited & InhibitType::SCREENSAVER)) return;
 
   if ((inhibited & InhibitType::SCREENSAVER) > 0) {
-    DPMSDisable(this->dpy);
+    XScreenSaverSuspend(this->dpy, True);
     XSync(this->dpy, False);
   } else {
-    DPMSEnable(this->dpy);
+    XScreenSaverSuspend(this->dpy, False);
     XSync(this->dpy, False);
   }
 

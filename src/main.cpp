@@ -253,7 +253,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
   MateScreenSaverInhibitor i11(inhibitCB, unInhibitCB); inhibitors.push_back(&i11);
   LinuxKernelInhibitor i7(inhibitCB, unInhibitCB, inPipe[1], outPipe[0]); inhibitors.push_back(&i7);
 #ifdef BUILDFLAG_X11
-  DPMSInhibitor i12(inhibitCB, unInhibitCB); inhibitors.push_back(&i12);
+  X11DPMSScreensaverInhibitor i12(inhibitCB, unInhibitCB); inhibitors.push_back(&i12);
 #endif
   XautolockInhibitor i8(inhibitCB, unInhibitCB); inhibitors.push_back(&i8);
   XidlehookInhibitor i9(inhibitCB, unInhibitCB); inhibitors.push_back(&i9);

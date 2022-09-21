@@ -107,7 +107,7 @@ org.gnome.ScreenSaver | D-Bus | <-> |
 org.cinnamon.ScreenSaver | D-Bus | <-> |
 org.mate.ScreenSaver | D-Bus | <-> |
 Linux kernel wakelock | sysfs | <-> | Probably need to chown root && chmod 4775 uinhibitd (setuid)
-X11 dpms (screen blanking) | libX11+libXext | -> |
+X11 dpms+xscreensaver | libX11+libXss | -> |
 xautolock | shell | -> |
 xidlehook | shell | -> | Start xidlehook with --socket /tmp/xidlehook.sock
 
@@ -129,8 +129,8 @@ nix run github:wentam/unified-inhibit
 
 * libdbus
 * [pkgconf](https://github.com/pkgconf/pkgconf) (to find D-Bus headers at build time)
-* libX11 (optional, for dpms, set X11=0 when running make to disable)
-* libXext (optional, for dpms, set X11=0 when running make to disable)
+* libX11 (optional, for dpms and xscreensaver, set X11=0 when running make to disable)
+* libXss/libXScrnSaver (optional, for dpms and xscreensaver, set X11=0 when running make to disable)
 
 ## Building
 

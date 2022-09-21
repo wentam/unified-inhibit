@@ -8,7 +8,7 @@ CXXFLAGS = ${INCLUDE} -pipe -std=c++20 -pedantic -Wextra -Wall -Wno-maybe-uninit
 LINK = -ldbus-1
 
 ifeq "$(X11)" "1"
-LINK += -lX11 -lXext
+LINK += -lX11 -lXss
 CXXFLAGS += -DBUILDFLAG_X11
 endif
 

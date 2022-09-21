@@ -213,10 +213,10 @@ namespace uinhibit {
   };
 
 #ifdef BUILDFLAG_X11
-  class DPMSInhibitor : public Inhibitor {
+  class X11DPMSScreensaverInhibitor : public Inhibitor {
     public:
-      DPMSInhibitor(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
-                    std::function<void(Inhibitor*,Inhibit)> unInhibitCB);
+      X11DPMSScreensaverInhibitor(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
+                                  std::function<void(Inhibitor*,Inhibit)> unInhibitCB);
 
     protected:
       ReturnObject start();
