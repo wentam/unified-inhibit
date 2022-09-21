@@ -250,6 +250,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
   GnomeSessionManagerInhibitor i3(inhibitCB, unInhibitCB); inhibitors.push_back(&i3);
   GnomeScreenSaverInhibitor i5(inhibitCB, unInhibitCB); inhibitors.push_back(&i5);
   CinnamonScreenSaverInhibitor i6(inhibitCB, unInhibitCB); inhibitors.push_back(&i6);
+  MateScreenSaverInhibitor i11(inhibitCB, unInhibitCB); inhibitors.push_back(&i11);
   LinuxKernelInhibitor i7(inhibitCB, unInhibitCB, inPipe[1], outPipe[0]); inhibitors.push_back(&i7);
   XautolockInhibitor i8(inhibitCB, unInhibitCB); inhibitors.push_back(&i8);
   XidlehookInhibitor i9(inhibitCB, unInhibitCB); inhibitors.push_back(&i9);

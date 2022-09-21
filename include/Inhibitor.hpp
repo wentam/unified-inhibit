@@ -337,7 +337,7 @@ namespace uinhibit {
       std::string extraIntrospect;
   };
 
-  class FreedesktopScreenSaverInhibitor : public SimpleDBusInhibitor {  
+  class FreedesktopScreenSaverInhibitor : public SimpleDBusInhibitor {
     public:
       FreedesktopScreenSaverInhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
                                       std::function<void(Inhibitor*, Inhibit)> unInhibitCB) :
@@ -350,7 +350,20 @@ namespace uinhibit {
                             "") {};
   };
 
-  class GnomeScreenSaverInhibitor : public SimpleDBusInhibitor {  
+  class MateScreenSaverInhibitor : public SimpleDBusInhibitor {
+    public:
+      MateScreenSaverInhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
+                                      std::function<void(Inhibitor*, Inhibit)> unInhibitCB) :
+        SimpleDBusInhibitor(inhibitCB, unInhibitCB,
+                            "org.mate.ScreenSaver",
+                            {}, {},
+                            "org.mate.ScreenSaver",
+                            "/org/mate/ScreenSaver",
+                            InhibitType::SCREENSAVER,
+                            "") {};
+  };
+
+  class GnomeScreenSaverInhibitor : public SimpleDBusInhibitor {
     public:
       GnomeScreenSaverInhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
                                 std::function<void(Inhibitor*, Inhibit)> unInhibitCB);

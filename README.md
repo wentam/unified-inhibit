@@ -105,6 +105,7 @@ org.freedesktop.PowerManager | D-Bus | <-> |
 org.gnome.SessionManager | D-Bus | <-> |
 org.gnome.ScreenSaver | D-Bus | <-> |
 org.cinnamon.ScreenSaver | D-Bus | <-> |
+org.mate.ScreenSaver | D-Bus | <-> |
 Linux kernel wakelock | sysfs | <-> | Probably need to chown root && chmod 4775 uinhibitd (setuid)
 xautolock | shell | -> |
 xidlehook | shell | -> | Start xidlehook with --socket /tmp/xidlehook.sock
