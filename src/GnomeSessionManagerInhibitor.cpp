@@ -55,7 +55,7 @@ void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
   uint32_t flags;
   msg->getArgs(DBUS_TYPE_STRING, &appname,
                DBUS_TYPE_UINT32, &toplevel_xid,
-               DBUS_TYPE_STRING, &reason, 
+               DBUS_TYPE_STRING, &reason,
                DBUS_TYPE_UINT32, &flags,
                DBUS_TYPE_INVALID);
 
@@ -67,7 +67,7 @@ void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
   // Create/register our new inhibit
   InhibitType t = gnomeType2us((GnomeInhibitType)flags);
   Inhibit in = {t, appname, reason, this->mkId(msg->sender(), cookie),(uint64_t)time(NULL)};
-  this->registerInhibit(in);  
+  this->registerInhibit(in);
 
   // Track inhibit owner to allow unInhibit on crash
   this->inhibitOwners[msg->sender()].push_back(in.id);
@@ -122,9 +122,9 @@ void THIS::handleGetFlags(DBus::Message* msg, DBus::Message* retmsg) {
 
   uint32_t flags = 0;
   try {
-    uint32_t cookie = this->inhibitorPathToCookie(msg->path()); 
+    uint32_t cookie = this->inhibitorPathToCookie(msg->path());
     flags = us2gnomeType(this->inhibitFromCookie(cookie)->type);
-  } catch (InhibitNotFoundException& e)  { 
+  } catch (InhibitNotFoundException& e)  {
     printf(INTERFACE ": Caller requested information about non-existant inhibit.\n");
     // TODO: does dbus have a way for us to return an error to the caller?
   }
@@ -133,7 +133,7 @@ void THIS::handleGetFlags(DBus::Message* msg, DBus::Message* retmsg) {
 }
 
 void THIS::handleGetProperty(DBus::Message* msg, DBus::Message* retmsg) {
-  if (this->monitor) return;  
+  if (this->monitor) return;
   const char* interface; const char* property;
   msg->getArgs(DBUS_TYPE_STRING, &interface, DBUS_TYPE_STRING, &property, DBUS_TYPE_INVALID);
 
@@ -166,7 +166,7 @@ void THIS::handleGetReason(DBus::Message* msg, DBus::Message* retmsg) {
 
   const char* str = "";
   try {
-    uint32_t cookie = this->inhibitorPathToCookie(msg->path()); 
+    uint32_t cookie = this->inhibitorPathToCookie(msg->path());
     str = this->inhibitFromCookie(cookie)->reason.c_str();
   } catch (InhibitNotFoundException& e) {
     printf(INTERFACE ": Caller requested information about non-existant inhibit.\n");
@@ -176,7 +176,7 @@ void THIS::handleGetReason(DBus::Message* msg, DBus::Message* retmsg) {
   msg->newMethodReturn().appendArgs(DBUS_TYPE_STRING, &str, DBUS_TYPE_INVALID)->send();
 }
 
-void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {  
+void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
   if (this->monitor || std::string(msg->destination()) != INTERFACE) return;
 
 
@@ -338,10 +338,10 @@ InhibitID THIS::mkId(std::string sender, uint32_t cookie) {
 InhibitType THIS::gnomeType2us(GnomeInhibitType gnomeInhibitType) {
   InhibitType t = InhibitType::NONE;
 
-  if ((gnomeInhibitType & GnomeInhibitType::SUSPEND) > 0) 
+  if ((gnomeInhibitType & GnomeInhibitType::SUSPEND) > 0)
     t = static_cast<InhibitType>(t | InhibitType::SUSPEND);
   // TODO should SESSIONIDLE also inhibit suspend?
-  if ((gnomeInhibitType & GnomeInhibitType::SESSIONIDLE) > 0) 
+  if ((gnomeInhibitType & GnomeInhibitType::SESSIONIDLE) > 0)
     t = static_cast<InhibitType>(t | InhibitType::SCREENSAVER);
 
   // TODO should we support others?

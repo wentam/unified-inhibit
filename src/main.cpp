@@ -257,6 +257,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
 #endif
   XautolockInhibitor i8(inhibitCB, unInhibitCB); inhibitors.push_back(&i8);
   XidlehookInhibitor i9(inhibitCB, unInhibitCB); inhibitors.push_back(&i9);
+  SxmoInhibitor i13(inhibitCB, unInhibitCB); inhibitors.push_back(&i13);
   UserCommandsInhibitor i10(inhibitCB, unInhibitCB, args); inhibitors.push_back(&i10);
 
   // Run inhibitors

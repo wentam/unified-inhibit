@@ -78,16 +78,16 @@ namespace uinhibit {
                "listening on this interface. Became monitor, will eavesdrop and feed events.\n",
                interface.c_str());
       } catch (DBus::UnknownInterfaceError& e) {
-        printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] %s: "
+        printf("[" ANSI_COLOR_YELLOW "->" ANSI_COLOR_RESET "] %s: "
                "UNSUPPORTED: Something has this dbus interface implemented. Tried to become monitor in"
                " order to eavesdrop but your dbus daemon doesn't appear to support that (it's "
-               "probably too old).\n", interface.c_str());
+               "probably too old). We will still send events here. \n", interface.c_str());
       } catch (DBus::AccessDeniedError& e) {
-        printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] %s: "
+        printf("[" ANSI_COLOR_YELLOW "->" ANSI_COLOR_RESET "] %s: "
                "ACCESS DENIED: Something has this dbus interface implemented. Tried to become a"
                " monitor to eavesdrop but was denied access. You might need to give me setuid "
                " (chown root uinhibitd && chmod 4755 uinhibitd). You might need to allow monitoring"
-               " in D-Bus config.\n", interface.c_str());
+               " in D-Bus config. We will still send events here.\n", interface.c_str());
       }
     } else {
       int ret = 0;
@@ -175,7 +175,7 @@ namespace uinhibit {
           }
         }
       } catch (DBus::InvalidArgsError& e) {
-        printf("Got invalid args for a method call, ignoring.\n");
+        printf("Got invalid args for a method call, ignoring. (%s)\n", e.what());
         // TODO should we respond to the bad request in some way in this situation? Some apps
         // could hang waiting for a response.
       }

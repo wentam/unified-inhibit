@@ -319,10 +319,23 @@ InhibitType THIS::systemdType2us(std::string what) {
 }
 
 std::string THIS::us2systemdType(InhibitType t) {
-  std::string s = "";
+  std::set<std::string> whats;
 
-  if (t == InhibitType::SCREENSAVER) s = "";
-  if (t == InhibitType::SUSPEND) s = "idle";
+  if ((t & InhibitType::SCREENSAVER) > 0) whats.insert("idle");
+  if ((t & InhibitType::SUSPEND) > 0) {
+    if(!whats.contains("idle")) whats.insert("idle");
+    // TODO I think we need setuid for this to work,
+    // get permission denied with it enabled
+    //whats.insert("sleep");
+  }
 
-  return s;
+  std::string ret;
+  int32_t i = 0;
+  for (auto w : whats) {
+    if (i != 0) ret += ":";
+    ret += w;
+    i++;
+  }
+
+  return ret;
 }

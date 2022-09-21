@@ -250,6 +250,29 @@ namespace uinhibit {
       bool ok = false;
   };
 
+  class SxmoInhibitor : public Inhibitor {
+    public:
+      SxmoInhibitor(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
+                    std::function<void(Inhibitor*,Inhibit)> unInhibitCB);
+
+    protected:
+      struct _InhibitID {
+        uint64_t instanceID;
+        char token[1024];
+      };
+
+      ReturnObject start();
+      Inhibit doInhibit(InhibitRequest) override;
+      void doUnInhibit(InhibitID) override;
+      void handleInhibitEvent(Inhibit inhibit) override {};
+      void handleUnInhibitEvent(Inhibit inhibit) override {};
+      void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) override {};
+
+    private:
+      InhibitType lastInhibited = InhibitType::NONE;
+      bool ok = false;
+      InhibitID mkId(std::string token);
+  };
 
   class UserCommandsInhibitor: public Inhibitor {
     public:
