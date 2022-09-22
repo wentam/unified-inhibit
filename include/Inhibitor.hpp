@@ -271,7 +271,13 @@ namespace uinhibit {
     private:
       InhibitType lastInhibited = InhibitType::NONE;
       bool ok = false;
+      std::string mkToken(std::string appname, std::string reason);
       InhibitID mkId(std::string token);
+      void watcherThread();
+      std::mutex registerMutex;
+      std::vector<Inhibit> registerQueue; // under registerMutex
+      std::vector<InhibitID> unregisterQueue; // under registerMutex
+      std::set<InhibitID> ourInhibits; // under registerMutex
   };
 
   class UserCommandsInhibitor: public Inhibitor {

@@ -109,7 +109,7 @@ org.mate.ScreenSaver | D-Bus | <-> |
 Linux kernel wakelock | sysfs | <-> | Probably need to chown root && chmod 4775 uinhibitd (setuid)
 X11 dpms+xscreensaver | libX11+libXss | -> |
 xautolock | shell | -> |
-Sxmo      | shell | -> | If in ssh: export DBUS_SESSION_BUS_ADDRES=$(cat $XDG_RUNTIME_DIR/dbus.bus) before running uinhibitd
+Sxmo      | shell | <-> | If in ssh/tty: export DBUS_SESSION_BUS_ADDRESS=$(cat $XDG_RUNTIME_DIR/dbus.bus) before running uinhibitd
 xidlehook | shell | -> | Start xidlehook with --socket /tmp/xidlehook.sock
 
 More are out there. Please open issues for missing interfaces!

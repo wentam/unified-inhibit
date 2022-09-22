@@ -70,7 +70,7 @@ Inhibitor::ReturnObject THIS::start() {
       for (auto& r : this->unregisterQueue) this->registerUnInhibit(r);
       this->registerQueue.clear();
       this->unregisterQueue.clear();
-    } 
+    }
     co_await std::suspend_always();
   }
 }
@@ -96,7 +96,7 @@ void THIS::watcherThread() {
   //while(read(inotifyFD, &inotifyEvent, sizeof(InotifyEvent)) > 0) {}
 
   // Unfortunately we must poll such that we capture locks that expire without inotify event
-  while(1) {  
+  while(1) {
     int32_t wakeLockFile = open(WAKE_LOCK_PATH, O_RDONLY); // Must open every time to get
                                                                    // latest info
     char buf[4096] = "";
@@ -114,6 +114,7 @@ void THIS::watcherThread() {
     // Check for any locks we have not tracked yet
     for (auto lock : locks) {
       bool exists = false;
+      // TODO activeInhibits mutex lock needed?
       for (auto& [id, in] : this->activeInhibits) {
         auto idStruct = reinterpret_cast<const _InhibitID*>(&id[0]);
         if (strcmp(idStruct->lockName, lock.c_str()) == 0) exists = true;
@@ -145,7 +146,7 @@ void THIS::watcherThread() {
       if (!exists) {
         std::unique_lock<std::mutex> lk(this->registerMutex);
         this->unregisterQueue.push_back(this->mkId(idStruct->lockName));
-      } 
+      }
     }
 
     close(wakeLockFile);
