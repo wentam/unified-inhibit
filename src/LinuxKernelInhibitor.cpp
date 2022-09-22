@@ -40,11 +40,11 @@ THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
            WAKE_UNLOCK_PATH " doesn't exist. You probably don't have CONFIG_PM_WAKELOCKS enabled"
            " in your kernel.\n");
     ok = false;
-  } 
+  }
 
   char buf[8] = "";
   int64_t bytes = -1;
-  if (ok 
+  if (ok
       && (bytes = read(forkOutFD, &buf, sizeof(buf))) != 0 
       && (strncmp(buf, "nowrite", 7) == 0)) {
     printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] Linux kernel wakelock: "

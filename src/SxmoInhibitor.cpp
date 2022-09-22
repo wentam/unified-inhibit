@@ -16,6 +16,7 @@
 
 #include "Inhibitor.hpp"
 #include "util.hpp"
+#include <sys/inotify.h>
 
 #define THIS SxmoInhibitor
 
@@ -60,79 +61,127 @@ Inhibitor::ReturnObject THIS::start() {
 }
 
 void THIS::watcherThread() {
-  while(1) {
-    FILE* p = popen("sxmo_mutex.sh can_suspend list", "r");
-    if (p == NULL) {
-      puts(ANSI_COLOR_YELLOW
-           "Warning: failed to run sxmo_mutex.sh to check for new events"
-           ANSI_COLOR_RESET);
-      sleep(30);
-      continue;
-    }
+  std::string xdgRuntimeDir = getenv("XDG_RUNTIME_DIR");
+  std::string can_suspend = xdgRuntimeDir + "/sxmo_mutex/can_suspend";
+  std::string can_suspend_dir = xdgRuntimeDir + "/sxmo_mutex/";
 
-    std::string output;
-    char buf[1024];
-    while((fgets(buf, 1024, p)) != NULL) output += buf;
+  int32_t inotifyFD = inotify_init();
+  if (inotifyFD == -1) throw std::runtime_error("Failed to create inotify instance");
 
-    std::vector<std::string> tokens;
-    tokens.push_back("");
-    for (auto c : output) {
-      if (c == '\n') tokens.push_back("");
-      else tokens.back().push_back(c);
-    }
+  int32_t inotifyLockWD = inotify_add_watch(inotifyFD, can_suspend.c_str(), IN_MODIFY | IN_DELETE_SELF);
+  if (inotifyLockWD == -1) throw std::runtime_error("Failed to create inotify watch descriptor");
 
-    if (tokens.size() > 0 && tokens.back() == "") tokens.pop_back();
 
-    tokens.erase(
-      std::remove(tokens.begin(), tokens.end(), "Playing with leds"),
-      tokens.end()
-    );
+  int32_t inotifyLockWD2 = inotify_add_watch(inotifyFD, can_suspend_dir.c_str(), IN_CREATE);
+  if (inotifyLockWD2 == -1) throw std::runtime_error("Failed to create inotify watch descriptor");
 
-    tokens.erase(
-      std::remove(tokens.begin(), tokens.end(), "Checking some mutexes"),
-      tokens.end()
-    );
+  struct InotifyEvent {
+    int      wd;
+    uint32_t mask;
+    uint32_t cookie;
+    uint32_t len;
+    char     name[NAME_MAX+1];
+  } inotifyEvent;
 
-    // Check for any locks we have not tracked yet
-    for (auto tok : tokens) {
-      bool exists = false;
-      // TODO activeInhibits mutex lock needed?
-      for (auto& [id, in] : this->activeInhibits) {
-        auto idStruct = reinterpret_cast<const _InhibitID*>(&id[0]);
-        if (strcmp(idStruct->token, tok.c_str()) == 0) exists = true;
+  size_t got;
+  while((got = read(inotifyFD, &inotifyEvent, sizeof(InotifyEvent)) > 0)) {
+    int64_t i = 0;
+    while ( i < got ) {
+      InotifyEvent* event = (InotifyEvent*) &((&inotifyEvent)[i]);
+      i += sizeof(InotifyEvent) + event->len;
+
+      // can_suspend gets constantly deleted and recreated. Need to remake our watch when this
+      // happens.
+      if (((event->mask & IN_IGNORED) > 0)
+          || ((event->mask & IN_DELETE_SELF) > 0)
+          || (event->mask & IN_CREATE) > 0) {
+        inotify_rm_watch(inotifyFD, inotifyLockWD);
+        inotifyLockWD = inotify_add_watch(inotifyFD, can_suspend.c_str(), IN_MODIFY | IN_DELETE_SELF);
+        if (inotifyLockWD == -1) throw std::runtime_error("Failed to create inotify watch descriptor");
       }
 
-      if (!exists) {
-        std::unique_lock<std::mutex> lk(this->registerMutex);
-        auto id = this->mkId(tok.c_str());
+      FILE* p = popen("sxmo_mutex.sh can_suspend list", "r");
+      if (p == NULL) {
+        puts(ANSI_COLOR_YELLOW
+             "Warning: failed to run sxmo_mutex.sh to check for new events"
+             ANSI_COLOR_RESET);
+        sleep(30);
+        continue;
+      }
 
-        if (!this->ourInhibits.contains(id)) {
-          registerQueue.push_back({
-            InhibitType::SUSPEND,
-              "unknown-app",
-              tok,
-              id,
-              (uint64_t)time(NULL)
-          });
+      std::string output;
+      char buf[1024];
+      while((fgets(buf, 1024, p)) != NULL) output += buf;
+
+      std::vector<std::string> tokens;
+      tokens.push_back("");
+      for (auto c : output) {
+        if (c == '\n') tokens.push_back("");
+        else tokens.back().push_back(c);
+      }
+
+      if (tokens.size() > 0 && tokens.back() == "") tokens.pop_back();
+
+      tokens.erase(
+        std::remove(tokens.begin(), tokens.end(), "Playing with leds"),
+        tokens.end()
+        );
+
+      tokens.erase(
+        std::remove(tokens.begin(), tokens.end(), "Checking some mutexes"),
+        tokens.end()
+        );
+
+      // Check for any locks we have not tracked yet
+      for (auto tok : tokens) {
+        std::unique_lock<std::mutex> lk(this->registerMutex);
+
+        bool exists = false;
+        // TODO activeInhibits mutex lock needed?
+        for (auto& [id, in] : this->activeInhibits) {
+          auto idStruct = reinterpret_cast<const _InhibitID*>(&id[0]);
+          if (strcmp(idStruct->token, tok.c_str()) == 0) exists = true;
+        }
+
+        for (auto& in : this->registerQueue) {
+          auto idStruct = reinterpret_cast<const _InhibitID*>(&in.id[0]);
+          if (strcmp(idStruct->token, tok.c_str()) == 0) exists = true;
+        }
+
+        if (!exists) {
+          auto id = this->mkId(tok.c_str());
+
+          if (!this->ourInhibits.contains(id)) {
+            registerQueue.push_back({
+              InhibitType::SUSPEND,
+                "unknown-app",
+                tok,
+                id,
+                (uint64_t)time(NULL)
+            });
+          }
         }
       }
-    }
 
-    // Check for any lokcs we are tracking and have been removed
-    for (auto& [id, in] : this->activeInhibits) {
-      auto idStruct = reinterpret_cast<const _InhibitID*>(&id[0]);
-      bool exists = false;
-      for (auto tok : tokens) if (strcmp(idStruct->token, tok.c_str()) == 0) exists = true;
+      // Check for any lokcs we are tracking and have been removed
+      for (auto& [id, in] : this->activeInhibits) {
+        auto idStruct = reinterpret_cast<const _InhibitID*>(&id[0]);
+        bool exists = false;
+        for (auto tok : tokens) if (strcmp(idStruct->token, tok.c_str()) == 0) exists = true;
 
-      if (!exists) {
-        std::unique_lock<std::mutex> lk(this->registerMutex);
-        this->unregisterQueue.push_back(id);
+        if (!exists) {
+          std::unique_lock<std::mutex> lk(this->registerMutex);
+          this->unregisterQueue.push_back(id);
+        }
       }
-    }
 
-    pclose(p);
-    sleep(1);
+      pclose(p);
+    }
   }
+
+  printf(ANSI_COLOR_YELLOW "Warning: sxmo read loop broke!\n" ANSI_COLOR_RESET);
+
+  close(inotifyFD);
 }
 
 Inhibit THIS::doInhibit(InhibitRequest r) {

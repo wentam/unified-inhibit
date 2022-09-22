@@ -187,6 +187,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
   for(char **current = environ; *current; current++) startEnv.push_back(*current);
 
   // Security: We might be setuid. Clean up environment.
+  const char* xdgRuntimeDir = getenv("XDG_RUNTIME_DIR");
   const char* sessionBusEnv = getenv("DBUS_SESSION_BUS_ADDRESS");
   const char* display = getenv("DISPLAY");
   std::string cleanDisplay = "";
@@ -196,6 +197,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
 
   setenv("DISPLAY", cleanDisplay.c_str(), 0);
   if (sessionBusEnv != nullptr) setenv("DBUS_SESSION_BUS_ADDRESS", sessionBusEnv, 0);
+  if (xdgRuntimeDir != nullptr) setenv("XDG_RUNTIME_DIR", xdgRuntimeDir, 0);
 
   // Set up lock-taking fork for linux kernel inhibitor
   //
