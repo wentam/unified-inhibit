@@ -149,6 +149,8 @@ void DBus::throwErrAndFree() {
 };
 
 bool DBus::nameHasOwner(const char* name) {
+    // TODO I think we need setuid for this to work,
+    // get permission denied with it enabled
   bool ret = dbus_bus_name_has_owner(this->conn, name, &err);
   this->throwErrAndFree();
 
@@ -172,11 +174,13 @@ void DBus::addMatch(const char* rule) {
 }
 
 void DBus::readWrite(int32_t timeoutMS) {
-  if (!dbus_connection_read_write(this->conn, timeoutMS)) throw DisconnectedError("Lost D-Bus connection");
+  if (!dbus_connection_read_write(this->conn, timeoutMS))
+    throw DisconnectedError("Lost D-Bus connection");
 }
 
 void DBus::readWriteDispatch(int32_t timeoutMS) {
-  if (!dbus_connection_read_write_dispatch(this->conn, timeoutMS)) throw DisconnectedError("Lost D-Bus connection");
+  if (!dbus_connection_read_write_dispatch(this->conn, timeoutMS))
+    throw DisconnectedError("Lost D-Bus connection");
 }
 
 void DBus::flush() {
@@ -191,7 +195,10 @@ DBus::Message DBus::popMessage() {
   return ret;
 };
 
-DBus::Message DBus::newMethodCall(const char* destination, const char* path, const char* interface, const char* method) {
+DBus::Message DBus::newMethodCall(const char* destination,
+                                  const char* path,
+                                  const char* interface,
+                                  const char* method) {
   DBusMessage* msg = dbus_message_new_method_call(destination, path, interface, method);
 
   auto ptr = std::shared_ptr<DBus::UniqueMessage>(new DBus::UniqueMessage(msg));
@@ -208,7 +215,10 @@ DBus::Message DBus::newSignal(const char* path, const char* interface, const cha
 };
 
 void DBus::becomeMonitor(std::vector<const char*> filters) {
-  auto callMsg = this->newMethodCall(DBUS_SERVICE_DBUS, DBUS_PATH_DBUS, DBUS_INTERFACE_MONITORING, "BecomeMonitor");
+  auto callMsg = this->newMethodCall(DBUS_SERVICE_DBUS,
+                                     DBUS_PATH_DBUS,
+                                     DBUS_INTERFACE_MONITORING,
+                                     "BecomeMonitor");
 
   if (callMsg.isNull()) { throw std::bad_alloc(); }
 
@@ -266,11 +276,16 @@ void DBus::registerObjectPath(
   UserDataWrap s = {handler, this, userData};
   wrappedUserData.push_back(s);
 
-  dbus_connection_try_register_object_path(this->conn, path, &vtable, &(wrappedUserData.back()), &err);
+  dbus_connection_try_register_object_path(this->conn,
+                                           path,
+                                           &vtable,
+                                           &(wrappedUserData.back()),
+                                           &err);
   this->throwErrAndFree();
 };
 
-DBus::Message::Message(std::shared_ptr<DBus::UniqueMessage> msg, DBus* dbus) : msg(msg), dbus(dbus) {};
+DBus::Message::Message(std::shared_ptr<DBus::UniqueMessage> msg, DBus* dbus) : msg(msg), dbus(dbus)
+{};
 
 bool DBus::Message::isNull() {
   return (this->msg.get()->msg == nullptr);
@@ -316,7 +331,7 @@ const char* DBus::Message::path() {
 uint32_t DBus::Message::senderPID() {
   const char* sender = this->sender();
   auto retmsg = this->dbus
-    ->newMethodCall(DBUS_SERVICE_DBUS, DBUS_PATH_DBUS, DBUS_SERVICE_DBUS, "GetConnectionUnixProcessID")
+    ->newMethodCall(DBUS_SERVICE_DBUS,DBUS_PATH_DBUS,DBUS_SERVICE_DBUS,"GetConnectionUnixProcessID")
     .appendArgs(DBUS_TYPE_STRING, &sender, DBUS_TYPE_INVALID)
     ->sendAwait(500);
 
@@ -372,7 +387,10 @@ void DBus::Message::send(uint32_t serial) {
 };
 
 DBus::Message DBus::Message::sendAwait(int32_t timeout) {
-  auto r = dbus_connection_send_with_reply_and_block(this->dbus->conn, this->msg.get()->msg, timeout, &(this->dbus->err));
+  auto r = dbus_connection_send_with_reply_and_block(this->dbus->conn,
+                                                     this->msg.get()->msg,
+                                                     timeout,
+                                                     &(this->dbus->err));
   this->dbus->throwErrAndFree();
 
   auto ptr = std::shared_ptr<DBus::UniqueMessage>(new DBus::UniqueMessage(r));

@@ -45,102 +45,102 @@ class DBus {
         char* message;
     };
 
-    // DBUS_ERROR_FAILED 
-    class FailedError : public Error { using Error::Error; }; 
+    // DBUS_ERROR_FAILED
+    class FailedError : public Error { using Error::Error; };
     // DBUS_ERROR_NO_MEMORY
-    class NoMemoryError : public Error { using Error::Error; }; 
+    class NoMemoryError : public Error { using Error::Error; };
     // DBUS_ERROR_SERVICE_UNKNOWN
-    class ServiceUnknownError : public Error { using Error::Error; }; 
+    class ServiceUnknownError : public Error { using Error::Error; };
     // DBUS_ERROR_NAME_HAS_NO_OWNER
-    class NameHasNoOwnerError : public Error { using Error::Error; }; 
+    class NameHasNoOwnerError : public Error { using Error::Error; };
     // DBUS_ERROR_NO_REPLY
-    class NoReplyError : public Error { using Error::Error; }; 
+    class NoReplyError : public Error { using Error::Error; };
     // DBUS_ERROR_IO_ERROR
-    class IoErrorError : public Error { using Error::Error; }; 
+    class IoErrorError : public Error { using Error::Error; };
     // DBUS_ERROR_BAD_ADDRESS
-    class BadAddressError : public Error { using Error::Error; }; 
+    class BadAddressError : public Error { using Error::Error; };
     // DBUS_ERROR_NOT_SUPPORTED
-    class NotSupportedError : public Error { using Error::Error; }; 
+    class NotSupportedError : public Error { using Error::Error; };
     // DBUS_ERROR_LIMITS_EXCEEDED
-    class LimitsExceededError : public Error { using Error::Error; }; 
+    class LimitsExceededError : public Error { using Error::Error; };
     // DBUS_ERROR_ACCESS_DENIED
-    class AccessDeniedError : public Error { using Error::Error; }; 
+    class AccessDeniedError : public Error { using Error::Error; };
     // DBUS_ERROR_AUTH_FAILED
-    class AuthFailedError : public Error { using Error::Error; }; 
+    class AuthFailedError : public Error { using Error::Error; };
     // DBUS_ERROR_NO_SERVER
-    class NoServerError : public Error { using Error::Error; }; 
+    class NoServerError : public Error { using Error::Error; };
     // DBUS_ERROR_TIMEOUT
-    class TimeoutError : public Error { using Error::Error; }; 
+    class TimeoutError : public Error { using Error::Error; };
     // DBUS_ERROR_NO_NETWORK
-    class NoNetworkError : public Error { using Error::Error; }; 
+    class NoNetworkError : public Error { using Error::Error; };
     // DBUS_ERROR_ADDRESS_IN_USE
-    class AddressInUseError : public Error { using Error::Error; }; 
+    class AddressInUseError : public Error { using Error::Error; };
     // DBUS_ERROR_DISCONNECTED
-    class DisconnectedError : public Error { using Error::Error; }; 
+    class DisconnectedError : public Error { using Error::Error; };
     // DBUS_ERROR_INVALID_ARGS
-    class InvalidArgsError : public Error { using Error::Error; }; 
+    class InvalidArgsError : public Error { using Error::Error; };
     // DBUS_ERROR_FILE_NOT_FOUND
-    class FileNotFoundError : public Error { using Error::Error; }; 
+    class FileNotFoundError : public Error { using Error::Error; };
     // DBUS_ERROR_FILE_EXISTS
-    class FileExistsError : public Error { using Error::Error; }; 
+    class FileExistsError : public Error { using Error::Error; };
     // DBUS_ERROR_UNKNOWN_METHOD
-    class UnknownMethodError : public Error { using Error::Error; }; 
+    class UnknownMethodError : public Error { using Error::Error; };
     // DBUS_ERROR_UNKNOWN_OBJECT
-    class UnknownObjectError : public Error { using Error::Error; }; 
+    class UnknownObjectError : public Error { using Error::Error; };
     // DBUS_ERROR_UNKNOWN_INTERFACE
-    class UnknownInterfaceError : public Error { using Error::Error; }; 
+    class UnknownInterfaceError : public Error { using Error::Error; };
     // DBUS_ERROR_UNKNOWN_PROPERTY
-    class UnknownPropertyError : public Error { using Error::Error; }; 
+    class UnknownPropertyError : public Error { using Error::Error; };
     // DBUS_ERROR_PROPERTY_READ_ONLY
-    class PropertyReadOnlyError : public Error { using Error::Error; }; 
+    class PropertyReadOnlyError : public Error { using Error::Error; };
     // DBUS_ERROR_TIMED_OUT
-    class TimedOutError : public Error { using Error::Error; }; 
+    class TimedOutError : public Error { using Error::Error; };
     // DBUS_ERROR_MATCH_RULE_NOT_FOUND
-    class MatchRuleNotFoundError : public Error { using Error::Error; }; 
+    class MatchRuleNotFoundError : public Error { using Error::Error; };
     // DBUS_ERROR_MATCH_RULE_INVALID
-    class MatchRuleInvalidError : public Error { using Error::Error; }; 
+    class MatchRuleInvalidError : public Error { using Error::Error; };
     // DBUS_ERROR_SPAWN_EXEC_FAILED
-    class SpawnExecFailedError : public Error { using Error::Error; }; 
+    class SpawnExecFailedError : public Error { using Error::Error; };
     // DBUS_ERROR_SPAWN_FORK_FAILED
-    class SpawnForkFailedError : public Error { using Error::Error; }; 
+    class SpawnForkFailedError : public Error { using Error::Error; };
     // DBUS_ERROR_SPAWN_CHILD_EXITED
-    class SpawnChildExitedError : public Error { using Error::Error; }; 
+    class SpawnChildExitedError : public Error { using Error::Error; };
     // DBUS_ERROR_SPAWN_CHILD_SIGNALED
-    class SpawnChildSignaledError : public Error { using Error::Error; }; 
+    class SpawnChildSignaledError : public Error { using Error::Error; };
     // DBUS_ERROR_SPAWN_FAILED
-    class SpawnFailedError : public Error { using Error::Error; }; 
+    class SpawnFailedError : public Error { using Error::Error; };
     // DBUS_ERROR_SPAWN_SETUP_FAILED
-    class SpawnSetupFailedError : public Error { using Error::Error; }; 
+    class SpawnSetupFailedError : public Error { using Error::Error; };
     // DBUS_ERROR_SPAWN_CONFIG_INVALID
-    class SpawnConfigInvalidError : public Error { using Error::Error; }; 
+    class SpawnConfigInvalidError : public Error { using Error::Error; };
     // DBUS_ERROR_SPAWN_SERVICE_INVALID
-    class SpawnServiceInvalidError : public Error { using Error::Error; }; 
+    class SpawnServiceInvalidError : public Error { using Error::Error; };
     // DBUS_ERROR_SPAWN_SERVICE_NOT_FOUND
-    class SpawnServiceNotFoundError : public Error { using Error::Error; }; 
+    class SpawnServiceNotFoundError : public Error { using Error::Error; };
     // DBUS_ERROR_SPAWN_PERMISSIONS_INVALID
-    class SpawnPermissionsInvalidError : public Error { using Error::Error; }; 
+    class SpawnPermissionsInvalidError : public Error { using Error::Error; };
     // DBUS_ERROR_SPAWN_FILE_INVALID
-    class SpawnFileInvalidError : public Error { using Error::Error; }; 
+    class SpawnFileInvalidError : public Error { using Error::Error; };
     // DBUS_ERROR_SPAWN_NO_MEMORY
-    class SpawnNoMemoryError : public Error { using Error::Error; }; 
+    class SpawnNoMemoryError : public Error { using Error::Error; };
     // DBUS_ERROR_UNIX_PROCESS_ID_UNKNOWN
-    class UnixProcessIdUnknownError : public Error { using Error::Error; }; 
+    class UnixProcessIdUnknownError : public Error { using Error::Error; };
     // DBUS_ERROR_INVALID_SIGNATURE
-    class InvalidSignatureError : public Error { using Error::Error; }; 
+    class InvalidSignatureError : public Error { using Error::Error; };
     // DBUS_ERROR_INVALID_FILE_CONTENT
-    class InvalidFileContentError : public Error { using Error::Error; }; 
+    class InvalidFileContentError : public Error { using Error::Error; };
     // DBUS_ERROR_SELINUX_SECURITY_CONTEXT_UNKNOWN
-    class SelinuxSecurityContextUnknownError : public Error { using Error::Error; }; 
+    class SelinuxSecurityContextUnknownError : public Error { using Error::Error; };
     // DBUS_ERROR_ADT_AUDIT_DATA_UNKNOWN
-    class AdtAuditDataUnknownError : public Error { using Error::Error; }; 
+    class AdtAuditDataUnknownError : public Error { using Error::Error; };
     // DBUS_ERROR_OBJECT_PATH_IN_USE
-    class ObjectPathInUseError : public Error { using Error::Error; }; 
+    class ObjectPathInUseError : public Error { using Error::Error; };
     // DBUS_ERROR_INCONSISTENT_MESSAGE
-    class InconsistentMessageError : public Error { using Error::Error; }; 
+    class InconsistentMessageError : public Error { using Error::Error; };
     // DBUS_ERROR_INTERACTIVE_AUTHORIZATION_REQUIRED
-    class InteractiveAuthorizationRequiredError : public Error { using Error::Error; }; 
+    class InteractiveAuthorizationRequiredError : public Error { using Error::Error; };
     // DBUS_ERROR_NOT_CONTAINER
-    class NotContainerError : public Error { using Error::Error; }; 
+    class NotContainerError : public Error { using Error::Error; };
 
     void throwErrAndFree();
 
@@ -190,7 +190,10 @@ class DBus {
     void readWriteDispatch(int32_t timeoutMS);
     void flush();
     Message popMessage();
-    Message newMethodCall(const char* destination, const char* path, const char* interface, const char* method);
+    Message newMethodCall(const char* destination,
+                          const char* path,
+                          const char* interface,
+                          const char* method);
     Message newSignal(const char* path, const char* interface, const char* name);
     void becomeMonitor(std::vector<const char*> filters);
 

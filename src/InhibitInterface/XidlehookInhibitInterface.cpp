@@ -14,17 +14,17 @@
 // not, see <https://www.gnu.org/licenses/>.
 
 
-#include "Inhibitor.hpp"
+#include "InhibitInterface.hpp"
 #include "util.hpp"
 
-#define THIS XidlehookInhibitor
+#define THIS XidlehookInhibitInterface
 #define SOCKETPATH "/tmp/xidlehook.sock"
 
 using namespace uinhibit;
 
-THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
-           std::function<void(Inhibitor*,Inhibit)> unInhibitCB) :
-  Inhibitor(inhibitCB, unInhibitCB, "xidlehook")
+THIS::THIS(std::function<void(InhibitInterface*,Inhibit)> inhibitCB,
+           std::function<void(InhibitInterface*,Inhibit)> unInhibitCB) :
+  InhibitInterface(inhibitCB, unInhibitCB, "xidlehook")
 {
   // TODO: cleaner way to detect if xidlehook is running/exists?
   int32_t r = system("ps aux | grep xidlehook | grep -v grep > /dev/null 2>/dev/null");
@@ -36,7 +36,8 @@ THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
 
   if (!xidlehookRunning) {
     printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] xidlehook: "
-           "Doesn't look like xidlehook is running. Make sure you start it with xidlehook --socket " SOCKETPATH " \n");
+           "Doesn't look like xidlehook is running. Make sure you start it with xidlehook --socket "
+           SOCKETPATH " \n");
   } else if (!xidlehookExists) {
     printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] xidlehook: "
            "xidlehook looks like it's running, but we couldn't find the xidlehook command. \n");
@@ -46,12 +47,13 @@ THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
            " Make sure you start xidlehook with '--socket " SOCKETPATH "'\n");
   } else {
     printf("[" ANSI_COLOR_GREEN "->" ANSI_COLOR_RESET "] xidlehook: "
-           "Feeding events with xidlehook-client --socket " SOCKETPATH " control --action Disable/Enable\n");
+           "Feeding events with xidlehook-client --socket "
+           SOCKETPATH " control --action Disable/Enable\n");
     this->ok = true;
   }
 }
 
-Inhibitor::ReturnObject THIS::start() {
+InhibitInterface::ReturnObject THIS::start() {
   while(1) co_await std::suspend_always();
 }
 
@@ -63,11 +65,17 @@ void THIS::handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) {
   if ((inhibited & InhibitType::SCREENSAVER) == (lastInhibited & InhibitType::SCREENSAVER)) return;
 
   if ((inhibited & InhibitType::SCREENSAVER) > 0) {
-    int32_t r = system("xidlehook-client --socket " SOCKETPATH " control --action Disable > /dev/null 2> /dev/null");
-    if (r != 0) puts(ANSI_COLOR_YELLOW "Warning: failed to disable xidlehook (return code)" ANSI_COLOR_RESET);
+    int32_t r = system("xidlehook-client --socket " SOCKETPATH " control --action Disable"
+                       " > /dev/null 2> /dev/null");
+    if (r != 0) puts(ANSI_COLOR_YELLOW
+                     "Warning: failed to disable xidlehook (return code)"
+                     ANSI_COLOR_RESET);
   } else {
-    int32_t r = system("xidlehook-client --socket " SOCKETPATH " control --action Enable > /dev/null 2> /dev/null");
-    if (r != 0) puts(ANSI_COLOR_YELLOW "Warning: failed to enable xidlehook (return code)" ANSI_COLOR_RESET);
+    int32_t r = system("xidlehook-client --socket " SOCKETPATH " control --action Enable"
+                       " > /dev/null 2> /dev/null");
+    if (r != 0) puts(ANSI_COLOR_YELLOW
+                     "Warning: failed to enable xidlehook (return code)"
+                     ANSI_COLOR_RESET);
   }
 
   lastInhibited = inhibited;

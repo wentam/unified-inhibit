@@ -14,16 +14,16 @@
 // not, see <https://www.gnu.org/licenses/>.
 
 
-#include "Inhibitor.hpp"
+#include "InhibitInterface.hpp"
 #include "util.hpp"
 
-#define THIS UserCommandsInhibitor
+#define THIS UserCommandsInhibitInterface
 
 using namespace uinhibit;
 
-THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
-           std::function<void(Inhibitor*,Inhibit)> unInhibitCB,
-           Args args) : Inhibitor(inhibitCB, unInhibitCB, "user-commands")
+THIS::THIS(std::function<void(InhibitInterface*,Inhibit)> inhibitCB,
+           std::function<void(InhibitInterface*,Inhibit)> unInhibitCB,
+           Args args) : InhibitInterface(inhibitCB, unInhibitCB, "user-commands")
 {
   // TODO test with empty strings as commands, make sure no crashy
 
@@ -64,7 +64,7 @@ THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
   }
 }
 
-Inhibitor::ReturnObject THIS::start() {
+InhibitInterface::ReturnObject THIS::start() {
   while(1) co_await std::suspend_always();
 }
 

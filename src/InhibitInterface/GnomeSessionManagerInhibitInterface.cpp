@@ -13,15 +13,15 @@
 // You should have received a copy of the GNU General Public License along with unified-inhibit. If
 // not, see <https://www.gnu.org/licenses/>.
 
-#include "Inhibitor.hpp"
+#include "InhibitInterface.hpp"
 #include <cstdio>
 #include <unistd.h>
 #include "util.hpp"
 #include <cstring>
 
-#define THIS GnomeSessionManagerInhibitor
-#define METHOD_CAST (void (DBusInhibitor::*)(DBus::Message* msg, DBus::Message* retmsg))
-#define SIGNAL_CAST (void (DBusInhibitor::*)(DBus::Message* msg))
+#define THIS GnomeSessionManagerInhibitInterface
+#define METHOD_CAST (void (DBusInhibitInterface::*)(DBus::Message* msg, DBus::Message* retmsg))
+#define SIGNAL_CAST (void (DBusInhibitInterface::*)(DBus::Message* msg))
 #define INTERFACE "org.gnome.SessionManager"
 #define DBUS_INTERFACE "org.freedesktop.DBus"
 #define INTROSPECT_INTERFACE "org.freedesktop.DBus.Introspectable"
@@ -29,9 +29,9 @@
 
 using namespace uinhibit;
 
-THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB, 
-           std::function<void(Inhibitor*, Inhibit)> unInhibitCB)
-  : DBusInhibitor
+THIS::THIS(std::function<void(InhibitInterface*, Inhibit)> inhibitCB, 
+           std::function<void(InhibitInterface*, Inhibit)> unInhibitCB)
+  : DBusInhibitInterface
     (inhibitCB, unInhibitCB, INTERFACE, INTERFACE, DBUS_BUS_SESSION,
      {
        {INTERFACE, "Inhibit", METHOD_CAST &THIS::handleInhibitMsg, "*"},
@@ -108,7 +108,10 @@ void THIS::handleGetInhibitors(DBus::Message* msg, DBus::Message* retmsg) {
   }
 
   const char** retPaths = flatPaths.data();
-  msg->newMethodReturn().appendArgs(DBUS_TYPE_ARRAY, DBUS_TYPE_OBJECT_PATH, &retPaths, flatPaths.size(), DBUS_TYPE_INVALID)->send();
+  msg->newMethodReturn().appendArgs(DBUS_TYPE_ARRAY, DBUS_TYPE_OBJECT_PATH,
+                                    &retPaths,
+                                    flatPaths.size(),
+                                    DBUS_TYPE_INVALID)->send();
 }
 
 void THIS::handleNameLostMsg(DBus::Message* msg) {

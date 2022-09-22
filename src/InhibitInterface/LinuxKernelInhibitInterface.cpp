@@ -13,21 +13,21 @@
 // You should have received a copy of the GNU General Public License along with unified-inhibit. If
 // not, see <https://www.gnu.org/licenses/>.
 
-#include "Inhibitor.hpp"
+#include "InhibitInterface.hpp"
 #include <sys/inotify.h>
 #include <fcntl.h>
 #include "util.hpp"
 
-#define THIS LinuxKernelInhibitor
+#define THIS LinuxKernelInhibitInterface
 #define WAKE_LOCK_PATH "/sys/power/wake_lock"
 #define WAKE_UNLOCK_PATH "/sys/power/wake_unlock"
 
 using namespace uinhibit;
 
-THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
-           std::function<void(Inhibitor*,Inhibit)> unInhibitCB,
+THIS::THIS(std::function<void(InhibitInterface*,Inhibit)> inhibitCB,
+           std::function<void(InhibitInterface*,Inhibit)> unInhibitCB,
            int32_t forkFD, int32_t forkOutFD) :
-          Inhibitor(inhibitCB, unInhibitCB, "linux-kernel-wakelock"),
+          InhibitInterface(inhibitCB, unInhibitCB, "linux-kernel-wakelock"),
           forkFD(forkFD)
 {
   if (access(WAKE_LOCK_PATH, F_OK) != 0) {
@@ -58,7 +58,7 @@ THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
     printf("[" ANSI_COLOR_GREEN "<->" ANSI_COLOR_RESET "] Linux kernel wakelock\n");
 };
 
-Inhibitor::ReturnObject THIS::start() {
+InhibitInterface::ReturnObject THIS::start() {
   while (!ok) co_await std::suspend_always();
 
   std::jthread(&THIS::watcherThread, this).detach();

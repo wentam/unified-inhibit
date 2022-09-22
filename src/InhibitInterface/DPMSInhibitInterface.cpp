@@ -16,19 +16,19 @@
 
 #ifdef BUILDFLAG_X11
 
-#include "Inhibitor.hpp"
+#include "InhibitInterface.hpp"
 #include "util.hpp"
 
 #include <X11/Xlib.h>
 #include <X11/extensions/scrnsaver.h>
 
-#define THIS X11DPMSScreensaverInhibitor
+#define THIS X11DPMSScreensaverInhibitInterface
 
 using namespace uinhibit;
 
-THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
-           std::function<void(Inhibitor*,Inhibit)> unInhibitCB) :
-  Inhibitor(inhibitCB, unInhibitCB, "x11-dpms-xscreensaver")
+THIS::THIS(std::function<void(InhibitInterface*,Inhibit)> inhibitCB,
+           std::function<void(InhibitInterface*,Inhibit)> unInhibitCB) :
+  InhibitInterface(inhibitCB, unInhibitCB, "x11-dpms-xscreensaver")
 {
   if(!(this->dpy = XOpenDisplay(NULL))) {
     printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] X11-dpms+xscreensaver: "
@@ -37,11 +37,12 @@ THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
   }
 
   printf("[" ANSI_COLOR_GREEN "->" ANSI_COLOR_RESET "] X11-dpms+xscreensaver: "
-         "Feeding events, will disable screen blanking and xscreensaver upon screensaver inhibit.\n");
+         "Feeding events, will disable screen blanking and xscreensaver upon screensaver"
+         " inhibit.\n");
   this->ok = true;
 }
 
-Inhibitor::ReturnObject THIS::start() {
+InhibitInterface::ReturnObject THIS::start() {
   while(1) co_await std::suspend_always();
 }
 

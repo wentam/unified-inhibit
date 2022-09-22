@@ -49,10 +49,10 @@ class UnQuiet {
 };
 
 // Runs the inhibitor in a thread until out of scope
-class InhibitorSession {
+class InhibitInterfaceSession {
   public:
-    InhibitorSession(Inhibitor* i) : tr(&InhibitorSession::runInhibitorThread, this, i) {}
-    ~InhibitorSession() { std::unique_lock<std::mutex> lk(stopMutex); stop = true; }
+    InhibitInterfaceSession(InhibitInterface* i) : tr(&InhibitInterfaceSession::runInhibitInterfaceThread, this, i) {}
+    ~InhibitInterfaceSession() { std::unique_lock<std::mutex> lk(stopMutex); stop = true; }
     std::jthread tr;
 
     // Blocking. Will be slow as we're waiting on mainloop polling.
@@ -71,7 +71,7 @@ class InhibitorSession {
     std::mutex stopMutex;
     bool stop = false;
 
-    void runInhibitorThread(Inhibitor* i) {
+    void runInhibitInterfaceThread(InhibitInterface* i) {
       auto ro = i->start();
       while(1) {
         {

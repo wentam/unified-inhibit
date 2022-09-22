@@ -11,7 +11,7 @@ static void freedesktopPowerManagerAssertions(DBus& dbus) {
     "/PowerManager",
     InhibitType::SUSPEND,
     [](auto in1, auto in2) {
-      return std::shared_ptr<SimpleDBusInhibitor>(new FreedesktopPowerManagerInhibitor(in1, in2));
+      return std::shared_ptr<SimpleDBusInhibitInterface>(new FreedesktopPowerManagerInhibitInterface(in1, in2));
     });
 
 
@@ -21,20 +21,20 @@ static void freedesktopPowerManagerAssertions(DBus& dbus) {
 
     std::string mode = "Implementation";
 
-    std::shared_ptr<SimpleDBusInhibitor> impl_i;
-    std::unique_ptr<InhibitorSession> impl_session;
+    std::shared_ptr<SimpleDBusInhibitInterface> impl_i;
+    std::unique_ptr<InhibitInterfaceSession> impl_session;
     if (monitor) {
       mode = "Monitoring";
 
-      impl_i = std::shared_ptr<FreedesktopPowerManagerInhibitor>(
-        new FreedesktopPowerManagerInhibitor([](auto a, auto b){}, [](auto a, auto b){})
+      impl_i = std::shared_ptr<FreedesktopPowerManagerInhibitInterface>(
+        new FreedesktopPowerManagerInhibitInterface([](auto a, auto b){}, [](auto a, auto b){})
       );
-      impl_session = std::unique_ptr<InhibitorSession>(new InhibitorSession(impl_i.get()));
+      impl_session = std::unique_ptr<InhibitInterfaceSession>(new InhibitInterfaceSession(impl_i.get()));
       usleep(50*1000); // Give D-Bus a chance to ensure name is fully claimed
     }
 
-    FreedesktopPowerManagerInhibitor i([](auto a, Inhibit in){}, [](auto a, Inhibit in){});
-    InhibitorSession session(&i);
+    FreedesktopPowerManagerInhibitInterface i([](auto a, Inhibit in){}, [](auto a, Inhibit in){});
+    InhibitInterfaceSession session(&i);
 
     // --- D-Bus HasInhibit ---
 

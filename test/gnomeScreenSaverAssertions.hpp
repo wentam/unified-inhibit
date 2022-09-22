@@ -11,7 +11,7 @@ static void gnomeScreenSaverAssertions(DBus& dbus) {
     "/org/gnome/ScreenSaver",
     InhibitType::SCREENSAVER,
     [](auto in1, auto in2) {
-      return std::shared_ptr<SimpleDBusInhibitor>(new GnomeScreenSaverInhibitor(in1, in2));
+      return std::shared_ptr<SimpleDBusInhibitInterface>(new GnomeScreenSaverInhibitInterface(in1, in2));
     }
   );
 

@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstdint>
-#include "Inhibitor.hpp"
+#include "InhibitInterface.hpp"
 #include <fcntl.h>
 #include <signal.h>
 #include "DBus.hpp"

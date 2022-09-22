@@ -14,17 +14,17 @@
 // not, see <https://www.gnu.org/licenses/>.
 
 
-#include "Inhibitor.hpp"
+#include "InhibitInterface.hpp"
 #include "util.hpp"
 #include <sys/inotify.h>
 
-#define THIS SxmoInhibitor
+#define THIS SxmoInhibitInterface
 
 using namespace uinhibit;
 
-THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
-           std::function<void(Inhibitor*,Inhibit)> unInhibitCB) :
-  Inhibitor(inhibitCB, unInhibitCB, "sxmo")
+THIS::THIS(std::function<void(InhibitInterface*,Inhibit)> inhibitCB,
+           std::function<void(InhibitInterface*,Inhibit)> unInhibitCB) :
+  InhibitInterface(inhibitCB, unInhibitCB, "sxmo")
 {
   int32_t r = system("sxmo_mutex.sh can_suspend list > /dev/null 2> /dev/null");
   bool sxmoMutexExists = (r == 0);
@@ -34,15 +34,15 @@ THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
            "Can't find sxmo_mutex.sh. You probably don't have Sxmo. \n");
   } else {
     printf("[" ANSI_COLOR_GREEN "<->" ANSI_COLOR_RESET "] Sxmo: "
-           "Feeding via 'sxmo_mutex.sh can_suspend lock|free'. Will map sent screensaver+suspend events to can_suspend. Will also read suspend events."
-           " If running in ssh/tty, you need to run"
-           " 'export DBUS_SESSION_BUS_ADDRESS=$(cat $XDG_RUNTIME_DIR/dbus.bus)' before starting"
-           " uinhibitd\n");
+           "Feeding via 'sxmo_mutex.sh can_suspend lock|free'. Will map sent screensaver+suspend"
+           " events to can_suspend. Will also read suspend events. If running in ssh/tty, you need"
+           " to run 'export DBUS_SESSION_BUS_ADDRESS=$(cat $XDG_RUNTIME_DIR/dbus.bus)' before"
+           " starting uinhibitd\n");
     this->ok = true;
   }
 }
 
-Inhibitor::ReturnObject THIS::start() {
+InhibitInterface::ReturnObject THIS::start() {
   while (!ok) co_await std::suspend_always();
 
   std::jthread(&THIS::watcherThread, this).detach();
@@ -68,7 +68,9 @@ void THIS::watcherThread() {
   int32_t inotifyFD = inotify_init();
   if (inotifyFD == -1) throw std::runtime_error("Failed to create inotify instance");
 
-  int32_t inotifyLockWD = inotify_add_watch(inotifyFD, can_suspend.c_str(), IN_MODIFY | IN_DELETE_SELF);
+  int32_t inotifyLockWD = inotify_add_watch(inotifyFD,
+                                            can_suspend.c_str(),
+                                            IN_MODIFY | IN_DELETE_SELF);
   if (inotifyLockWD == -1) throw std::runtime_error("Failed to create inotify watch descriptor");
 
 
@@ -96,8 +98,11 @@ void THIS::watcherThread() {
           || ((event->mask & IN_DELETE_SELF) > 0)
           || (event->mask & IN_CREATE) > 0) {
         inotify_rm_watch(inotifyFD, inotifyLockWD);
-        inotifyLockWD = inotify_add_watch(inotifyFD, can_suspend.c_str(), IN_MODIFY | IN_DELETE_SELF);
-        if (inotifyLockWD == -1) throw std::runtime_error("Failed to create inotify watch descriptor");
+        inotifyLockWD = inotify_add_watch(inotifyFD,
+                                          can_suspend.c_str(),
+                                          IN_MODIFY | IN_DELETE_SELF);
+        if (inotifyLockWD == -1)
+          throw std::runtime_error("Failed to create inotify watch descriptor");
       }
 
       FILE* p = popen("sxmo_mutex.sh can_suspend list", "r");

@@ -11,7 +11,7 @@ static void mateScreenSaverAssertions(DBus& dbus) {
     "/org/mate/ScreenSaver",
     InhibitType::SCREENSAVER,
     [](auto in1, auto in2) {
-      return std::shared_ptr<SimpleDBusInhibitor>(new MateScreenSaverInhibitor(in1, in2));
+      return std::shared_ptr<SimpleDBusInhibitInterface>(new MateScreenSaverInhibitInterface(in1, in2));
     }
     );
 }

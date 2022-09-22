@@ -6,7 +6,7 @@
 * [Setup/configuration](#setupconfiguration)
   * [setuid](#setuid)
   * [org.freedesktop.login1 (systemd inhibit)](#orgfreedesktoplogin1-systemd-inhibit)
-* [Supported inhibitors](#supported-inhibitors)
+* [Supported inhibit interfaces](#supported-inhibit-interfaces)
 * [Try it out](#try-it-out-nix)
 * [Usage](#usagecli-actions)
 * [Dependencies](#dependencies)
@@ -23,7 +23,7 @@ applications should send this message. Instead there are more than 10 different 
 be present on your system.
 
 If you're a user, you pretty much need to be running gnome or KDE for inhibitors to work correctly and reliably.
-If you're an application developer, you need to support a long list of inhibitor mechanisms to get
+If you're an application developer, you need to support a long list of inhibit mechanisms to get
 things working reliably everywhere. It's painful for everyone.
 
 This is the bad kind of fragmentation: These aren't unique approaches to solving a given problem
@@ -48,10 +48,10 @@ Applications are already telling us when we need these inhibits. Just not in a n
 
 ## What unified-inhibit does
 
-unified-inhibit (uinhibitd) implements/listens on as many inhibitor interfaces as possible
+unified-inhibit (uinhibitd) implements/listens on as many inhibit interfaces as possible
 forwarding all inhibit events to all interfaces. If an app inhibits the screensaver via
 org.gnome.ScreenSaver, we will also forward that event to org.freedesktop.ScreenSaver (and all of
-the other inhibitors that accept a screensaver inhibit event).
+the other interfaces that accept a screensaver inhibit event).
 
 This means all interfaces effectively share the same state. Use any interface of your choosing,
 you'll get all of the events.
@@ -96,8 +96,8 @@ following D-Bus rules in /etc/dbus-1/system.d/root-can-own-login1.conf:
 </busconfig>
 ```
 
-## Supported inhibitors
-Inhibitor | Protocol | Direction | Notes
+## Supported inhibit interfaces
+Interface | Protocol | Direction | Notes
 ---|---|---|---
 org.freedesktop.login1 | D-Bus | <-> | Probably need to chown root && chmod 4775 uinhibitd (setuid). Might need to configure D-Bus.
 org.freedesktop.ScreenSaver | D-Bus | <-> |
@@ -114,7 +114,7 @@ Sxmo      | shell | <-> | If in ssh/tty: export DBUS_SESSION_BUS_ADDRESS=$(cat $
 
 More are out there. Please open issues for missing interfaces!
 
-D-Bus inhibitors will implement their interface when nobody else is implementing the interface.
+D-Bus interfaces will implement their interface when nobody else is.
 
 When another application has an interface implemented, we will eavesdrop via D-Bus
 [BecomeMonitor](https://dbus.freedesktop.org/doc/dbus-specification.html#bus-messages-become-monitor).
@@ -124,7 +124,7 @@ When another application has an interface implemented, we will eavesdrop via D-B
 ```
 nix run github:wentam/unified-inhibit
 ```
-(inhibitors requiring setuid will not work like this)
+(interfaces requiring setuid will not work like this)
 
 ## Dependencies
 

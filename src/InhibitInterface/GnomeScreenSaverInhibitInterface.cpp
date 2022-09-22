@@ -13,24 +13,24 @@
 // You should have received a copy of the GNU General Public License along with unified-inhibit. If
 // not, see <https://www.gnu.org/licenses/>.
 
-#include "Inhibitor.hpp"
+#include "InhibitInterface.hpp"
 #include <cstdio>
 #include <unistd.h>
 #include "util.hpp"
 #include <cstring>
 
-#define THIS GnomeScreenSaverInhibitor
-#define METHOD_CAST (void (DBusInhibitor::*)(DBus::Message* msg, DBus::Message* retmsg))
-#define SIGNAL_CAST (void (DBusInhibitor::*)(DBus::Message* msg))
+#define THIS GnomeScreenSaverInhibitInterface
+#define METHOD_CAST (void (DBusInhibitInterface::*)(DBus::Message* msg, DBus::Message* retmsg))
+#define SIGNAL_CAST (void (DBusInhibitInterface::*)(DBus::Message* msg))
 #define INTERFACE "org.gnome.ScreenSaver"
 #define DBUS_INTERFACE "org.freedesktop.DBus"
 #define INTROSPECT_INTERFACE "org.freedesktop.DBus.Introspectable"
 
 using namespace uinhibit;
 
-THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
-           std::function<void(Inhibitor*, Inhibit)> unInhibitCB)
-  : SimpleDBusInhibitor
+THIS::THIS(std::function<void(InhibitInterface*, Inhibit)> inhibitCB,
+           std::function<void(InhibitInterface*, Inhibit)> unInhibitCB)
+  : SimpleDBusInhibitInterface
     (inhibitCB, unInhibitCB, INTERFACE,
      {
        {INTERFACE, "SimulateUserActivity", METHOD_CAST &THIS::handleSimActivityMsg, "*"},

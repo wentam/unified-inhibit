@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License along with unified-inhibit. If
 // not, see <https://www.gnu.org/licenses/>.
 
-#include "Inhibitor.hpp"
+#include "InhibitInterface.hpp"
 #include <cstdio>
 #include <unistd.h>
 #include "util.hpp"
@@ -29,9 +29,9 @@ namespace cpoll {
 #include <thread>
 #include <dirent.h>
 
-#define THIS SystemdInhibitor
-#define METHOD_CAST (void (DBusInhibitor::*)(DBus::Message* msg, DBus::Message* retmsg))
-#define SIGNAL_CAST (void (DBusInhibitor::*)(DBus::Message* msg))
+#define THIS SystemdInhibitInterface
+#define METHOD_CAST (void (DBusInhibitInterface::*)(DBus::Message* msg, DBus::Message* retmsg))
+#define SIGNAL_CAST (void (DBusInhibitInterface::*)(DBus::Message* msg))
 #define INTERFACE "org.freedesktop.login1.Manager"
 #define DBUSNAME "org.freedesktop.login1"
 #define DBUS_INTERFACE "org.freedesktop.DBus"
@@ -40,9 +40,9 @@ namespace cpoll {
 
 using namespace uinhibit;
 
-THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
-           std::function<void(Inhibitor*, Inhibit)> unInhibitCB)
-  : DBusInhibitor
+THIS::THIS(std::function<void(InhibitInterface*, Inhibit)> inhibitCB,
+           std::function<void(InhibitInterface*, Inhibit)> unInhibitCB)
+  : DBusInhibitInterface
     (inhibitCB, unInhibitCB, DBUSNAME, DBUSNAME, DBUS_BUS_SYSTEM,
      {
        {INTERFACE, "Inhibit", METHOD_CAST &THIS::handleInhibitMsg, "*"},
@@ -217,7 +217,8 @@ void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
 
 THIS::lockRef THIS::newLockRef() {
     mkdir("/tmp/uinhibitd-systemd-inhibits/", 0777);
-    std::string file = "/tmp/uinhibitd-systemd-inhibits/inhibit" + std::to_string(++this->lastLockRef) + ".ref";
+    std::string file =
+      "/tmp/uinhibitd-systemd-inhibits/inhibit" + std::to_string(++this->lastLockRef) + ".ref";
     unlink(file.c_str());
 
     int32_t fifo_r = mkfifo(file.c_str(), 0600);

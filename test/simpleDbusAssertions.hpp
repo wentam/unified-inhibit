@@ -8,9 +8,9 @@ static void simpleDbusAssertions(
   std::string dbusName,
   std::string dbusPath,
   InhibitType inhibitType,
-  std::function<std::shared_ptr<SimpleDBusInhibitor>(
-    std::function<void(Inhibitor*, Inhibit)>,
-    std::function<void(Inhibitor*, Inhibit)>
+  std::function<std::shared_ptr<SimpleDBusInhibitInterface>(
+    std::function<void(InhibitInterface*, Inhibit)>,
+    std::function<void(InhibitInterface*, Inhibit)>
   )> construct
 ) {
   bool except = false;
@@ -35,13 +35,13 @@ static void simpleDbusAssertions(
 
     std::string mode = "Implementation";
 
-    std::shared_ptr<SimpleDBusInhibitor> impl_i;
-    std::unique_ptr<InhibitorSession> impl_session;
+    std::shared_ptr<SimpleDBusInhibitInterface> impl_i;
+    std::unique_ptr<InhibitInterfaceSession> impl_session;
     if (monitor) {
       mode = "Monitoring";
 
       impl_i = construct([](auto a, auto b){}, [](auto a, auto b){});
-      impl_session = std::unique_ptr<InhibitorSession>(new InhibitorSession(impl_i.get()));
+      impl_session = std::unique_ptr<InhibitInterfaceSession>(new InhibitInterfaceSession(impl_i.get()));
       usleep(50*1000); // Give D-Bus a chance to ensure name is fully claimed
     }
 
@@ -59,7 +59,7 @@ static void simpleDbusAssertions(
         lastCBUnInhibit = in;
       }
       );
-    InhibitorSession session(i.get());
+    InhibitInterfaceSession session(i.get());
 
     if (monitor) {
       assert(i->monitor,

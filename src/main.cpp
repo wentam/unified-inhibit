@@ -14,7 +14,7 @@
 // not, see <https://www.gnu.org/licenses/>.
 
 #include <cstdio>
-#include "Inhibitor.hpp"
+#include "InhibitInterface.hpp"
 #include <thread>
 #include <mutex>
 #include "util.hpp"
@@ -29,7 +29,7 @@ extern char **environ;
 //   inhibitors won't try to implement if existing implementer disappears)
 // * if another application tries to take over our D-Bus interface implementation,
 //   step back to monitoring mode?
-// * when logging inhibit state change and there are active inhibits, list the inhibitors 
+// * when logging inhibit state change and there are active inhibits, list the inhibitors
 //   responsible
 // * log levels
 // * optional ability to write the current inhibit state to a file
@@ -38,9 +38,9 @@ extern char **environ;
 
 using namespace uinhibit;
 
-static std::vector<Inhibitor*> inhibitors;
+static std::vector<InhibitInterface*> inhibitors;
 static InhibitType lastInhibitType = InhibitType::NONE;
-static std::map<InhibitID, std::vector<std::pair<Inhibitor*, InhibitID>>> releasePlan;
+static std::map<InhibitID, std::vector<std::pair<InhibitInterface*, InhibitID>>> releasePlan;
 
 static InhibitType inhibited() {
   InhibitType i = InhibitType::NONE;
@@ -60,7 +60,7 @@ static void printInhibited() {
   }
 }
 
-static void inhibitCB(Inhibitor* inhibitor, Inhibit inhibit) {
+static void inhibitCB(InhibitInterface* inhibitor, Inhibit inhibit) {
   printf("Inhibit event type=%d appname='%s' reason='%s' from='%s'\n",
          inhibit.type,
          inhibit.appname.c_str(),
@@ -84,7 +84,7 @@ static void inhibitCB(Inhibitor* inhibitor, Inhibit inhibit) {
   printInhibited();
 }
 
-static void unInhibitCB(Inhibitor* inhibitor, Inhibit inhibit) {
+static void unInhibitCB(InhibitInterface* inhibitor, Inhibit inhibit) {
   printf("UnInhibit event type=%d appname='%s' from='%s'\n",
          inhibit.type,
          inhibit.appname.c_str(),
@@ -211,7 +211,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
   if (pid == 0) {
     close(inPipe[1]);
     close(outPipe[0]);
-    LinuxKernelInhibitor::lockFork(inPipe[0], outPipe[1]);
+    LinuxKernelInhibitInterface::lockFork(inPipe[0], outPipe[1]);
     close(inPipe[0]);
     close(outPipe[1]);
     exit(0);
@@ -231,7 +231,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
 
   // Security note: we're root, always ensure these constructors are safe and don't touch raw
   // user input in any way. Our user input may be unprivileged.
-  uinhibit::SystemdInhibitor i4(inhibitCB, unInhibitCB); inhibitors.push_back(&i4);
+  uinhibit::SystemdInhibitInterface i4(inhibitCB, unInhibitCB); inhibitors.push_back(&i4);
 
   // D-Bus inhibitors that need the session bus should be constructed as the user
   if (setresuid(ruid,ruid,ruid) != 0) { printf("Failed to drop privileges\n"); exit(1); }
@@ -247,25 +247,26 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
     putenv(envMem.back());
   }
 
-  FreedesktopScreenSaverInhibitor i1(inhibitCB, unInhibitCB); inhibitors.push_back(&i1);
-  FreedesktopPowerManagerInhibitor i2(inhibitCB, unInhibitCB); inhibitors.push_back(&i2);
-  GnomeSessionManagerInhibitor i3(inhibitCB, unInhibitCB); inhibitors.push_back(&i3);
-  GnomeScreenSaverInhibitor i5(inhibitCB, unInhibitCB); inhibitors.push_back(&i5);
-  CinnamonScreenSaverInhibitor i6(inhibitCB, unInhibitCB); inhibitors.push_back(&i6);
-  MateScreenSaverInhibitor i11(inhibitCB, unInhibitCB); inhibitors.push_back(&i11);
-  LinuxKernelInhibitor i7(inhibitCB, unInhibitCB, inPipe[1], outPipe[0]); inhibitors.push_back(&i7);
+  FreedesktopScreenSaverInhibitInterface i1(inhibitCB, unInhibitCB); inhibitors.push_back(&i1);
+  FreedesktopPowerManagerInhibitInterface i2(inhibitCB, unInhibitCB); inhibitors.push_back(&i2);
+  GnomeSessionManagerInhibitInterface i3(inhibitCB, unInhibitCB); inhibitors.push_back(&i3);
+  GnomeScreenSaverInhibitInterface i5(inhibitCB, unInhibitCB); inhibitors.push_back(&i5);
+  CinnamonScreenSaverInhibitInterface i6(inhibitCB, unInhibitCB); inhibitors.push_back(&i6);
+  MateScreenSaverInhibitInterface i11(inhibitCB, unInhibitCB); inhibitors.push_back(&i11);
+  LinuxKernelInhibitInterface i7(inhibitCB, unInhibitCB, inPipe[1], outPipe[0]);
+  inhibitors.push_back(&i7);
 #ifdef BUILDFLAG_X11
-  X11DPMSScreensaverInhibitor i12(inhibitCB, unInhibitCB); inhibitors.push_back(&i12);
+  X11DPMSScreensaverInhibitInterface i12(inhibitCB, unInhibitCB); inhibitors.push_back(&i12);
 #endif
-  XautolockInhibitor i8(inhibitCB, unInhibitCB); inhibitors.push_back(&i8);
-  XidlehookInhibitor i9(inhibitCB, unInhibitCB); inhibitors.push_back(&i9);
-  SxmoInhibitor i13(inhibitCB, unInhibitCB); inhibitors.push_back(&i13);
-  UserCommandsInhibitor i10(inhibitCB, unInhibitCB, args); inhibitors.push_back(&i10);
+  XautolockInhibitInterface i8(inhibitCB, unInhibitCB); inhibitors.push_back(&i8);
+  XidlehookInhibitInterface i9(inhibitCB, unInhibitCB); inhibitors.push_back(&i9);
+  SxmoInhibitInterface i13(inhibitCB, unInhibitCB); inhibitors.push_back(&i13);
+  UserCommandsInhibitInterface i10(inhibitCB, unInhibitCB, args); inhibitors.push_back(&i10);
 
   // Run inhibitors
   // Security note: it is critical we have dropped privileges before this point, as we will be
   // running user-inputted commands.
-  std::vector<Inhibitor::ReturnObject> ros;
+  std::vector<InhibitInterface::ReturnObject> ros;
   for (auto& inhibitor : inhibitors) ros.push_back(inhibitor->start());
 
 

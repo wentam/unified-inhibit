@@ -13,15 +13,15 @@
 // You should have received a copy of the GNU General Public License along with unified-inhibit. If
 // not, see <https://www.gnu.org/licenses/>.
 
-#include "Inhibitor.hpp"
+#include "InhibitInterface.hpp"
 #include <cstdio>
 #include <unistd.h>
 #include "util.hpp"
 #include <cstring>
 
-#define THIS SimpleDBusInhibitor
-#define METHOD_CAST (void (DBusInhibitor::*)(DBus::Message* msg, DBus::Message* retmsg))
-#define SIGNAL_CAST (void (DBusInhibitor::*)(DBus::Message* msg))
+#define THIS SimpleDBusInhibitInterface
+#define METHOD_CAST (void (DBusInhibitInterface::*)(DBus::Message* msg, DBus::Message* retmsg))
+#define SIGNAL_CAST (void (DBusInhibitInterface::*)(DBus::Message* msg))
 #define DBUS_INTERFACE "org.freedesktop.DBus"
 #define INTROSPECT_INTERFACE "org.freedesktop.DBus.Introspectable"
 
@@ -34,8 +34,8 @@ static std::vector<T> catVec(std::vector<T> a, std::vector<T> b) {
     return c;
 };
 
-THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
-           std::function<void(Inhibitor*, Inhibit)> unInhibitCB,
+THIS::THIS(std::function<void(InhibitInterface*, Inhibit)> inhibitCB,
+           std::function<void(InhibitInterface*, Inhibit)> unInhibitCB,
            std::string name,
            std::vector<DBusMethodCB> myMethods,
            std::vector<DBusSignalCB> mySignals,
@@ -43,7 +43,7 @@ THIS::THIS(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
            std::string path,
            InhibitType inhibitType,
            std::string extraIntrospect)
-  : DBusInhibitor
+  : DBusInhibitInterface
     (inhibitCB, unInhibitCB, name, interface, DBUS_BUS_SESSION,
      catVec<DBusMethodCB>(
      {
@@ -153,8 +153,11 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
     const char* reason = r.reason.c_str();
 
     try {
-      auto replymsg = callDbus->newMethodCall(this->interface.c_str(), ("/"+this->path).c_str(), this->interface.c_str(), "Inhibit")
-        .appendArgs(DBUS_TYPE_STRING, &appname, 
+      auto replymsg = callDbus->newMethodCall(this->interface.c_str(),
+                                              ("/"+this->path).c_str(),
+                                              this->interface.c_str(),
+                                              "Inhibit")
+        .appendArgs(DBUS_TYPE_STRING, &appname,
                     DBUS_TYPE_STRING, &reason, DBUS_TYPE_INVALID)
         ->sendAwait(500);
       if(replymsg.notNull()) replymsg.getArgs(DBUS_TYPE_UINT32, &cookie, DBUS_TYPE_INVALID);
@@ -176,7 +179,10 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 void THIS::doUnInhibit(InhibitID id) {
   auto idStruct = reinterpret_cast<_InhibitID*>(&id[0]);
   if (this->monitor) {
-    callDbus->newMethodCall(this->interface.c_str(), ("/"+this->path).c_str(), this->interface.c_str(), "UnInhibit")
+    callDbus->newMethodCall(this->interface.c_str(),
+                            ("/"+this->path).c_str(),
+                            this->interface.c_str(),
+                            "UnInhibit")
         .appendArgs(DBUS_TYPE_UINT32, &(idStruct->cookie), DBUS_TYPE_INVALID)
         ->send();
   }

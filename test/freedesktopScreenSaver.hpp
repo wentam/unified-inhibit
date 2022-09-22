@@ -11,7 +11,7 @@ static void freedesktopScreenSaverAssertions(DBus& dbus) {
     "/ScreenSaver",
     InhibitType::SCREENSAVER,
     [](auto in1, auto in2) {
-      return std::shared_ptr<SimpleDBusInhibitor>(new FreedesktopScreenSaverInhibitor(in1, in2));
+      return std::shared_ptr<SimpleDBusInhibitInterface>(new FreedesktopScreenSaverInhibitInterface(in1, in2));
     }
     );
 }

@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License along with unified-inhibit. If
 // not, see <https://www.gnu.org/licenses/>.
 
-#include "Inhibitor.hpp"
+#include "InhibitInterface.hpp"
 #include <cstdio>
 #include <unistd.h>
 #include "util.hpp"
@@ -21,15 +21,15 @@
 #include <cxxabi.h>
 
 // TODO: if we started in monitoring mode but the interface becomes no longer implemented,
-// we should probably take it over (implement at DBusInhibitor level)
+// we should probably take it over (implement at DBusInhibitInterface level)
 //
 // TODO: if we are implementing, allow someone to take over the name and implement in our place.
 // if this happens, we need to fall back to monitoring
 
 namespace uinhibit {
-  DBusInhibitor::DBusInhibitor(
-    std::function<void(Inhibitor*, Inhibit)> inhibitCB,
-    std::function<void(Inhibitor*, Inhibit)> unInhibitCB,
+  DBusInhibitInterface::DBusInhibitInterface(
+    std::function<void(InhibitInterface*, Inhibit)> inhibitCB,
+    std::function<void(InhibitInterface*, Inhibit)> unInhibitCB,
     std::string name,
     std::string interface,
     DBusBusType busType,
@@ -37,7 +37,7 @@ namespace uinhibit {
     std::vector<DBusSignalCB> mySignals
   ) 
   : 
-    Inhibitor(inhibitCB, unInhibitCB, name),
+    InhibitInterface(inhibitCB, unInhibitCB, name),
     dbus(busType),
     myMethods(myMethods),
     mySignals(mySignals),
@@ -54,11 +54,15 @@ namespace uinhibit {
         for (auto method : myMethods) {
           std::string dest = "";
           if (method.destination != "*") dest = ",destination="+method.destination;
-          rules.push_back("type='method_call',interface='"+method.interface+"',member='"+method.member+"'"+dest);
+          rules.push_back("type='method_call',"
+                          "interface='"+method.interface+"',"
+                          "member='"+method.member+"'"+dest);
         }
 
         for (auto signal : mySignals)
-          rules.push_back("type='signal',interface='"+signal.interface+"',member='"+signal.member+"'");
+          rules.push_back("type='signal',"
+                          "interface='"+signal.interface+"',"
+                          "member='"+signal.member+"'");
 
         // TODO: it may be possible to monitor only the method returns going to the sender that
         // happens to be implementing this interface (destination=org.freedesktop.ScreenSaver)
@@ -79,8 +83,8 @@ namespace uinhibit {
                interface.c_str());
       } catch (DBus::UnknownInterfaceError& e) {
         printf("[" ANSI_COLOR_YELLOW "->" ANSI_COLOR_RESET "] %s: "
-               "UNSUPPORTED: Something has this dbus interface implemented. Tried to become monitor in"
-               " order to eavesdrop but your dbus daemon doesn't appear to support that (it's "
+               "UNSUPPORTED: Something has this dbus interface implemented. Tried to become monitor"
+               " in order to eavesdrop but your dbus daemon doesn't appear to support that (it's "
                "probably too old). We will still send events here. \n", interface.c_str());
       } catch (DBus::AccessDeniedError& e) {
         printf("[" ANSI_COLOR_YELLOW "->" ANSI_COLOR_RESET "] %s: "
@@ -109,12 +113,15 @@ namespace uinhibit {
         std::vector<std::string> signalStrings;
 
         for (auto signal : mySignals)
-          signalStrings.push_back("type='signal',interface='"+signal.interface+"',member='"+signal.member+"'");
+          signalStrings.push_back("type='signal',"
+                                  "interface='"+signal.interface+"',"
+                                  "member='"+signal.member+"'");
 
         for (auto& str : signalStrings) dbus.addMatch(str.c_str());
 
         printf("[" ANSI_COLOR_GREEN "<-" ANSI_COLOR_RESET "] %s: "
-               "Nothing listening on this interface. Implementing to receive events.\n", interface.c_str());
+               "Nothing listening on this interface. Implementing to receive events.\n",
+               interface.c_str());
       }
     }
   }
@@ -124,7 +131,7 @@ namespace uinhibit {
     return abi::__cxa_demangle(abi::__cxa_current_exception_type()->name(), 0, 0, &status);
   }
 
-  Inhibitor::ReturnObject DBusInhibitor::start() {
+  InhibitInterface::ReturnObject DBusInhibitInterface::start() {
     const char* mName = dbus.getUniqueName();
     const char* mName2 = "";
     if (callDbus != NULL) {

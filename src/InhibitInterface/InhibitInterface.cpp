@@ -13,15 +13,15 @@
 // You should have received a copy of the GNU General Public License along with unified-inhibit. If
 // not, see <https://www.gnu.org/licenses/>.
 
-#include "Inhibitor.hpp"
+#include "InhibitInterface.hpp"
 
 static std::mutex lastInstanceIdMutex;
 static uint64_t lastInstanceId = 0;
 
 namespace uinhibit {
 
-  Inhibitor::Inhibitor(std::function<void(Inhibitor*, Inhibit)> inhibitCB,
-                       std::function<void(Inhibitor*, Inhibit)> unInhibitCB,
+  InhibitInterface::InhibitInterface(std::function<void(InhibitInterface*, Inhibit)> inhibitCB,
+                       std::function<void(InhibitInterface*, Inhibit)> unInhibitCB,
                        std::string name) :
     name(name), inhibitCB(inhibitCB), unInhibitCB(unInhibitCB) {
       lastInstanceIdMutex.lock();
@@ -29,13 +29,16 @@ namespace uinhibit {
       lastInstanceIdMutex.unlock();
     };
 
-  InhibitType Inhibitor::inhibited() {
+  InhibitType InhibitInterface::inhibited() {
     InhibitType ret = InhibitType::NONE;
-    for (auto& [id, inhibit] : this->activeInhibits) ret = static_cast<InhibitType>(ret | inhibit.type);
+
+    for (auto& [id, inhibit] : this->activeInhibits)
+      ret = static_cast<InhibitType>(ret | inhibit.type);
+
     return ret;
   }
 
-  Inhibit Inhibitor::inhibit(InhibitRequest i)  {
+  Inhibit InhibitInterface::inhibit(InhibitRequest i)  {
     auto ii = this->doInhibit(i); 
     activeInhibits.insert({ii.id, ii});
     this->callEvent(true, ii);
@@ -43,7 +46,7 @@ namespace uinhibit {
     return ii;
   }
 
-  void Inhibitor::unInhibit(InhibitID id) {
+  void InhibitInterface::unInhibit(InhibitID id) {
     if (this->activeInhibits.contains(id)) {
       auto mid = this->activeInhibits.at(id);
       this->doUnInhibit(id);  
@@ -53,13 +56,13 @@ namespace uinhibit {
     // TODO: else throw exception?
   }
 
-  void Inhibitor::registerInhibit(Inhibit& i) {
+  void InhibitInterface::registerInhibit(Inhibit& i) {
     activeInhibits.insert({i.id, i});
     this->inhibitCB(this, i);
     this->callEvent(true, i);
   }
 
-  void Inhibitor::registerUnInhibit(InhibitID& id) {
+  void InhibitInterface::registerUnInhibit(InhibitID& id) {
     if (this->activeInhibits.contains(id)) {
       auto mid = this->activeInhibits.at(id);
       this->activeInhibits.erase(id);
@@ -68,7 +71,7 @@ namespace uinhibit {
     }
   }
 
-  void Inhibitor::callEvent(bool isInhibit, Inhibit i) {
+  void InhibitInterface::callEvent(bool isInhibit, Inhibit i) {
     if (isInhibit) this->handleInhibitEvent(i);
     else           this->handleUnInhibitEvent(i);
 

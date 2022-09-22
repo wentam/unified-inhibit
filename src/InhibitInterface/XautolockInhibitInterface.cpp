@@ -14,16 +14,16 @@
 // not, see <https://www.gnu.org/licenses/>.
 
 
-#include "Inhibitor.hpp"
+#include "InhibitInterface.hpp"
 #include "util.hpp"
 
-#define THIS XautolockInhibitor
+#define THIS XautolockInhibitInterface
 
 using namespace uinhibit;
 
-THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
-           std::function<void(Inhibitor*,Inhibit)> unInhibitCB) :
-  Inhibitor(inhibitCB, unInhibitCB, "xautolock")
+THIS::THIS(std::function<void(InhibitInterface*,Inhibit)> inhibitCB,
+           std::function<void(InhibitInterface*,Inhibit)> unInhibitCB) :
+  InhibitInterface(inhibitCB, unInhibitCB, "xautolock")
 {
   // TODO: cleaner way to detect if xautolock is running/exists?
   int32_t r = system("ps aux | grep xautolock | grep -v grep > /dev/null 2>/dev/null");
@@ -44,7 +44,7 @@ THIS::THIS(std::function<void(Inhibitor*,Inhibit)> inhibitCB,
   }
 }
 
-Inhibitor::ReturnObject THIS::start() {
+InhibitInterface::ReturnObject THIS::start() {
   while(1) co_await std::suspend_always();
 }
 
@@ -56,10 +56,14 @@ void THIS::handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) {
 
   if ((inhibited & InhibitType::SCREENSAVER) > 0) {
     int32_t r = system("xautolock -disable > /dev/null 2> /dev/null");
-    if (r != 0) puts(ANSI_COLOR_YELLOW "Warning: failed to disable xautolock (return code)" ANSI_COLOR_RESET);
+    if (r != 0) puts(ANSI_COLOR_YELLOW
+                     "Warning: failed to disable xautolock (return code)"
+                     ANSI_COLOR_RESET);
   } else {
     int32_t r = system("xautolock -enable > /dev/null 2> /dev/null");
-    if (r != 0) puts(ANSI_COLOR_YELLOW "Warning: failed to enable xautolock (return code)" ANSI_COLOR_RESET);
+    if (r != 0) puts(ANSI_COLOR_YELLOW
+                     "Warning: failed to enable xautolock (return code)"
+                     ANSI_COLOR_RESET);
   }
 
   lastInhibited = inhibited;
