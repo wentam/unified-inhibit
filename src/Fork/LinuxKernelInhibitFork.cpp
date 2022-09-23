@@ -14,7 +14,7 @@ void THIS::childSetup() {
     // All good, we will probably just fail to take any locks
   }
 
-  if (access(WAKE_LOCK_PATH, W_OK) != 0) tx("nowrite"); else tx("good");
+  if (access(WAKE_LOCK_PATH, W_OK) != 0) tx("nowrite\n"); else tx("good\n");
 }
 
 void THIS::handleMsg(std::string msg) {

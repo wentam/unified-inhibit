@@ -142,7 +142,7 @@ void THIS::watcherThread() {
         if (strcmp(idStruct->lockName, lock.c_str()) == 0) exists = true;
       }
 
-      if (!exists) {
+      if (!exists && !this->ourInhibits.contains(id)) {
         std::unique_lock<std::mutex> lk(this->registerMutex);
         this->unregisterQueue.push_back(this->mkId(idStruct->lockName));
       }
