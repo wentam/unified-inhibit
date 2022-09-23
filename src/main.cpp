@@ -19,6 +19,7 @@
 #include <mutex>
 #include "util.hpp"
 #include "Fork.hpp"
+#include <signal.h>
 
 extern char **environ;
 
@@ -119,6 +120,22 @@ static std::string cleanDisplayEnv(std::string display) {
   return cleanDisplay;
 }
 
+static void handleExit() {
+  for (auto& [id, plan] : releasePlan) {
+    for (auto& r : plan) {
+      try {
+        r.first->unInhibit(r.second);
+      } catch (uinhibit::InhibitRequestUnsupportedTypeException& e) {}
+    }
+  }
+  releasePlan.clear();
+  usleep(100*1000); // Give forks/threads a chance to release stuff
+}
+
+static void handleSig(int param) {
+  exit(0);
+}
+
 static Args parseArgs(int argc, char* argv[]) {
   Args ret = {};
   std::string lastArg;
@@ -158,6 +175,10 @@ static Args parseArgs(int argc, char* argv[]) {
 }
 
 int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
+  atexit(handleExit);
+  std::set_terminate(handleExit);
+  signal(SIGINT, handleSig);
+
   puts("===============================================================================");
   printf("unified-inhibit v%s\n\n", version());
   puts(

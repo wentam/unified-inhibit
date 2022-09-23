@@ -577,8 +577,6 @@ namespace uinhibit {
   };
 
   // wayland inhibit
-  // xscreensaver inhibit?
   // XFCE inhibit
   // org.freedesktop.portal.Inhibit xdg-desktop-portal - integration for sandboxed apps?
-  // sxmo?
 }

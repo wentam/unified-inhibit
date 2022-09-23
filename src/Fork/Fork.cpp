@@ -1,5 +1,7 @@
 #include "Fork.hpp"
 #include <stdexcept>
+#include <signal.h>
+#include <thread>
 
 using namespace uinhibit;
 
@@ -12,6 +14,13 @@ Fork::~Fork() {
   close(outPipe[1]);
 }
 
+static void handleSig(int param) {
+  std::jthread([]() {
+    sleep(1);
+    exit(0);
+  }).detach();
+}
+
 void Fork::run() {
   pid_t pid;
   if (pipe(inPipe) == -1 || pipe(outPipe) == -1) throw std::runtime_error("Failed to create pipe");
@@ -22,6 +31,7 @@ void Fork::run() {
     this->child = true;
     close(inPipe[1]); // Close our own write side
     close(outPipe[0]); // Close our own read side
+    signal(SIGINT, handleSig); // So we stay alive long enough to free stuff
     this->childSetup();
     this->doRun();
     close(inPipe[0]);
@@ -60,7 +70,7 @@ std::string Fork::rxLine() {
       this->lineBuf += this->rx();
 
     std::string out;
-    int64_t newline = 0;
+    int64_t newline = -1;
     int64_t i = 0;
     for (auto c : this->lineBuf) {
       if (c == '\n') { newline = i; break; }
@@ -68,7 +78,7 @@ std::string Fork::rxLine() {
       i++;
     }
 
-    if (newline > 0) this->lineBuf.erase(0,newline+1); // Remove this message from buf
+    if (newline >= 0) this->lineBuf.erase(0,newline+1); // Remove this message from buf
     if (this->lineBuf.size() > 1024*1024) throw std::runtime_error("Buffer overflow");
 
     return out;

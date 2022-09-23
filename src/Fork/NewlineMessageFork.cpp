@@ -14,7 +14,7 @@ void THIS::doRun() {
       buf += this->rx();
 
     std::string out;
-    int64_t newline = 0;
+    int64_t newline = -1;
     int64_t i = 0;
     for (auto c : buf) {
       if (c == '\n') { newline = i; break; }
@@ -24,7 +24,7 @@ void THIS::doRun() {
 
     this->handleMsg(out);
 
-    if (newline > 0) buf.erase(0,newline+1); // Remove this message from buf
+    if (newline >= 0) buf.erase(0,newline+1); // Remove this message from buf
     if (buf.size() > 1024*1024) throw std::runtime_error("Buffer overflow");
   }
 }

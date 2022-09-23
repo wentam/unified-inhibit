@@ -19,6 +19,7 @@ void THIS::childSetup() {
 
 void THIS::handleMsg(std::string msg) {
   if (msg.size() == 0) return;
+  msg.erase(std::remove(msg.begin(), msg.end(), ' '), msg.end());
 
   if (msg.front() == '\t') {
     msg.erase(0,1);
