@@ -41,7 +41,8 @@ namespace cpoll {
 using namespace uinhibit;
 
 THIS::THIS(std::function<void(InhibitInterface*, Inhibit)> inhibitCB,
-           std::function<void(InhibitInterface*, Inhibit)> unInhibitCB)
+           std::function<void(InhibitInterface*, Inhibit)> unInhibitCB,
+           SystemdInhibitFork* inhibitFork)
   : DBusInhibitInterface
     (inhibitCB, unInhibitCB, DBUSNAME, DBUSNAME, DBUS_BUS_SYSTEM,
      {
@@ -49,7 +50,12 @@ THIS::THIS(std::function<void(InhibitInterface*, Inhibit)> inhibitCB,
        {INTERFACE, "ListInhibitors", METHOD_CAST &THIS::handleListInhibitorsMsg, "*"},
        {INTROSPECT_INTERFACE, "Introspect", METHOD_CAST &THIS::handleIntrospect, INTERFACE}
      },
-     {}){}
+     {}),
+    inhibitFork(inhibitFork)
+{
+  this->forkSender = this->inhibitFork->rx();
+  this->forkSender.pop_back(); // Remove trailing newline
+}
 
 void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
   if (this->monitor || std::string(msg->destination()) != DBUSNAME) return;
@@ -171,6 +177,8 @@ void THIS::releaseThreadOurFd(int32_t fd, std::string path, Inhibit in) {
 }
 
 void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
+  if (msg->sender() == this->forkSender) return;
+
   const char* what; const char* who; const char* why; const char* mode;
   msg->getArgs(DBUS_TYPE_STRING, &what,
                DBUS_TYPE_STRING, &who,
@@ -246,27 +254,8 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 
   int32_t fd = -1;
   if (this->monitor) {
-    std::string whatstr = us2systemdType(r.type);
-    const char* what = whatstr.c_str();
-    const char* who = r.appname.c_str();
-    const char* why = r.reason.c_str();
-
-    // TODO support lock expirey?
-    const char* mode = "block";
-    try {
-      auto replymsg = callDbus
-        ->newMethodCall(DBUSNAME, PATH, INTERFACE, "Inhibit")
-        .appendArgs(DBUS_TYPE_STRING, &what,
-                    DBUS_TYPE_STRING, &who,
-                    DBUS_TYPE_STRING, &why,
-                    DBUS_TYPE_STRING, &mode,
-                    DBUS_TYPE_INVALID)
-        ->sendAwait(500);
-      if(replymsg.notNull()) replymsg.getArgs(DBUS_TYPE_UNIX_FD, &fd, DBUS_TYPE_INVALID);
-    } catch (DBus::NoReplyError& e) {
-      //printf("No response: %s\n", e.what());
-      throw InhibitNoResponseException();
-    }
+    this->inhibitFork->tx(us2systemdType(r.type)+'\t'+r.appname+'\t'+r.reason+'\t'+"block"+'\n');
+    fd = atol(this->inhibitFork->rx().c_str());
   } else {
     auto lockRef = this->newLockRef();
     close(lockRef.wfd);
@@ -282,7 +271,7 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
 void THIS::doUnInhibit(InhibitID id) {
   int32_t fd = reinterpret_cast<_InhibitID*>(&id[0])->fd;
   if (this->monitor) {
-    close(fd);
+    this->inhibitFork->tx(std::to_string(fd)+'\n');
   } else {
     char filePath[1024*10];
     std::string fdpath = "/proc/self/fd/";
@@ -325,9 +314,7 @@ std::string THIS::us2systemdType(InhibitType t) {
   if ((t & InhibitType::SCREENSAVER) > 0) whats.insert("idle");
   if ((t & InhibitType::SUSPEND) > 0) {
     if(!whats.contains("idle")) whats.insert("idle");
-    // TODO I think we need setuid for this to work,
-    // get permission denied with it enabled
-    //whats.insert("sleep");
+    whats.insert("sleep");
   }
 
   std::string ret;

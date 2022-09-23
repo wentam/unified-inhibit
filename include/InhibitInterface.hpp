@@ -28,18 +28,15 @@
 #include <coroutine>
 #include <thread>
 #include <set>
+#include "Fork.hpp"
 #include "util.hpp"
-
+#include "myExcept.hpp"
 
 #ifdef BUILDFLAG_X11
 #include <X11/Xlib.h>
 #endif
 
 namespace uinhibit {
-  class InhibitRequestUnsupportedTypeException : std::exception {};
-  class InhibitNoResponseException : std::exception {};
-  class InhibitNotFoundException : std::exception {};
-
   // Unique ID for an Inhibit. Data within is InhibitInterface-specific.
   // Unique among all InhibitInterfaces.
   typedef std::vector<std::byte> InhibitID; 
@@ -496,7 +493,8 @@ namespace uinhibit {
   class SystemdInhibitInterface : public DBusInhibitInterface {
     public:
       SystemdInhibitInterface(std::function<void(InhibitInterface*, Inhibit)> inhibitCB,
-                       std::function<void(InhibitInterface*, Inhibit)> unInhibitCB);
+                       std::function<void(InhibitInterface*, Inhibit)> unInhibitCB,
+                       SystemdInhibitFork* inhibitFork);
     protected:
       struct _InhibitID {
         uint64_t instanceID;
@@ -518,8 +516,10 @@ namespace uinhibit {
       void releaseThread(const char* path, Inhibit in);
       void releaseThreadOurFd(int32_t fd, std::string path, Inhibit in);
       InhibitID mkId(uint32_t fd);
-      InhibitType systemdType2us(std::string what); 
+      InhibitType systemdType2us(std::string what);
       std::string us2systemdType(InhibitType t);
+      SystemdInhibitFork* inhibitFork;
+      std::string forkSender;
 
       struct lockRef {
         int32_t rfd = -1;

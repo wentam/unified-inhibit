@@ -18,6 +18,7 @@
 #include <thread>
 #include <mutex>
 #include "util.hpp"
+#include "Fork.hpp"
 
 extern char **environ;
 
@@ -219,6 +220,8 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
   close(inPipe[0]);
   close(outPipe[1]);
 
+  SystemdInhibitFork systemdInhibitFork; systemdInhibitFork.run();
+
   // D-Bus tries to prevent usage of setuid binaries by checking if euid != ruid.
   // We need setuid, but we can just set both euid *and* ruid and D-Bus is happy.
   auto ruid = getuid();
@@ -231,7 +234,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
 
   // Security note: we're root, always ensure these constructors are safe and don't touch raw
   // user input in any way. Our user input may be unprivileged.
-  uinhibit::SystemdInhibitInterface i4(inhibitCB, unInhibitCB); inhibitors.push_back(&i4);
+  uinhibit::SystemdInhibitInterface i4(inhibitCB, unInhibitCB, &systemdInhibitFork); inhibitors.push_back(&i4);
 
   // D-Bus inhibitors that need the session bus should be constructed as the user
   if (setresuid(ruid,ruid,ruid) != 0) { printf("Failed to drop privileges\n"); exit(1); }

@@ -128,7 +128,7 @@ void THIS::watcherThread() {
           registerQueue.push_back({
             InhibitType::SUSPEND,
               "unknown-app",
-              "unknown-reason",
+              lock.c_str(),
               id,
               (uint64_t)time(NULL)
           });

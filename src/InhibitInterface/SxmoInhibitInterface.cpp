@@ -219,7 +219,6 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
   ret.id = this->mkId(token);
   ret.created = time(NULL);
 
-
   this->ourInhibits.insert(ret.id);
 
   return ret;
