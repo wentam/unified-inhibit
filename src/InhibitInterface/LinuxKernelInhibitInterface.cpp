@@ -34,28 +34,31 @@ THIS::THIS(std::function<void(InhibitInterface*,Inhibit)> inhibitCB,
     printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] Linux kernel wakelock: "
            WAKE_LOCK_PATH " doesn't exist. You probably don't have CONFIG_PM_WAKELOCKS enabled"
            " in your kernel.\n");
-    ok = false;
-  } else if (access(WAKE_UNLOCK_PATH, F_OK) != 0) {
+    return;
+  }
+
+  if (access(WAKE_UNLOCK_PATH, F_OK) != 0) {
     printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] Linux kernel wakelock: "
            WAKE_UNLOCK_PATH " doesn't exist. You probably don't have CONFIG_PM_WAKELOCKS enabled"
            " in your kernel.\n");
-    ok = false;
+    return;
   }
 
-  if (ok && this->inhibitFork->rxLine() == "nowrite") {
-    printf("[" ANSI_COLOR_RED "x" ANSI_COLOR_RESET "] Linux kernel wakelock: "
+  if (this->inhibitFork->rxLine() == "nowrite") {
+    printf("[" ANSI_COLOR_YELLOW "<-" ANSI_COLOR_RESET "] Linux kernel wakelock: "
            "Don't have write access to " WAKE_LOCK_PATH ". You probably need to give me setuid "
-           "(chown root uinhibitd && chmod 4755 uinhibitd).\n");
+           "(chown root uinhibitd && chmod 4755 uinhibitd). We'll still try to read events.\n");
 
-    ok = false;
+    canRead = true;
+    return;
   }
 
-  if (ok)
-    printf("[" ANSI_COLOR_GREEN "<->" ANSI_COLOR_RESET "] Linux kernel wakelock\n");
+  canSend = true;
+  printf("[" ANSI_COLOR_GREEN "<->" ANSI_COLOR_RESET "] Linux kernel wakelock\n");
 };
 
 InhibitInterface::ReturnObject THIS::start() {
-  while (!ok) co_await std::suspend_always();
+  while (!canRead) co_await std::suspend_always();
 
   std::jthread(&THIS::watcherThread, this).detach();
 

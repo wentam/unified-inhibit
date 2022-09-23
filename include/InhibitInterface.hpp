@@ -178,7 +178,8 @@ namespace uinhibit {
       void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) override;
 
     private:
-      bool ok = true;
+      bool canSend = false;
+      bool canRead = false;
       void watcherThread();
       InhibitID mkId(const char* lockName);
 
