@@ -21,8 +21,8 @@
 #include <map>
 
 #define VERSION_MAJOR 0
-#define VERSION_MINOR 1
-#define VERSION_REVISION 3
+#define VERSION_MINOR 2
+#define VERSION_REVISION 0
 
 static char _version[64];
 static char* version() {

@@ -2,6 +2,8 @@
 #include <stdexcept>
 #include <signal.h>
 #include <thread>
+#include <stdio.h>
+#include <sys/prctl.h>
 
 using namespace uinhibit;
 
@@ -22,6 +24,7 @@ static void handleSig(int param) {
 }
 
 void Fork::run() {
+  pid_t ppid_before_fork = getpid();
   pid_t pid;
   if (pipe(inPipe) == -1 || pipe(outPipe) == -1) throw std::runtime_error("Failed to create pipe");
   if ((pid = fork()) < 0) throw std::runtime_error("Failed to fork");
@@ -29,6 +32,14 @@ void Fork::run() {
   if (pid == 0) try {
     // Child
     this->child = true;
+
+    // Make sure we exit if we become orphaned
+    std::jthread([](pid_t before_fork) {
+      while (getppid() == before_fork) sleep(5);
+      sleep(1);
+      exit(0);
+    }, ppid_before_fork).detach();
+
     close(inPipe[1]); // Close our own write side
     close(outPipe[0]); // Close our own read side
     signal(SIGINT, handleSig); // So we stay alive long enough to free stuff
