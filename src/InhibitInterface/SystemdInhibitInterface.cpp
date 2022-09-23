@@ -301,7 +301,11 @@ InhibitType THIS::systemdType2us(std::string what) {
   InhibitType t = InhibitType::NONE;
 
   for (auto str : types) {
-    if (str == "idle") t = static_cast<InhibitType>(t | InhibitType::SUSPEND);
+    if (str == "idle") {
+      t = static_cast<InhibitType>(t | InhibitType::SCREENSAVER);
+      t = static_cast<InhibitType>(t | InhibitType::SUSPEND);
+    }
+    if (str == "sleep") t = static_cast<InhibitType>(t | InhibitType::SUSPEND);
     // TODO support others
   }
 

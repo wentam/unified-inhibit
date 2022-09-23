@@ -5,6 +5,13 @@ using namespace uinhibit;
 
 Fork::Fork() {}
 
+Fork::~Fork() {
+  close(inPipe[0]);
+  close(inPipe[1]);
+  close(outPipe[0]);
+  close(outPipe[1]);
+}
+
 void Fork::run() {
   pid_t pid;
   if (pipe(inPipe) == -1 || pipe(outPipe) == -1) throw std::runtime_error("Failed to create pipe");
@@ -45,4 +52,25 @@ std::string Fork::rx() {
   if (got < 0) throw std::runtime_error("Failed to read from pipe");
   str += buf;
   return str;
+}
+
+std::string Fork::rxLine() {
+  while (1) {
+    if (this->lineBuf.find('\n') == std::string::npos)
+      this->lineBuf += this->rx();
+
+    std::string out;
+    int64_t newline = 0;
+    int64_t i = 0;
+    for (auto c : this->lineBuf) {
+      if (c == '\n') { newline = i; break; }
+      out.push_back(c);
+      i++;
+    }
+
+    if (newline > 0) this->lineBuf.erase(0,newline+1); // Remove this message from buf
+    if (this->lineBuf.size() > 1024*1024) throw std::runtime_error("Buffer overflow");
+
+    return out;
+  }
 }

@@ -200,27 +200,9 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
   if (sessionBusEnv != nullptr) setenv("DBUS_SESSION_BUS_ADDRESS", sessionBusEnv, 0);
   if (xdgRuntimeDir != nullptr) setenv("XDG_RUNTIME_DIR", xdgRuntimeDir, 0);
 
-  // Set up lock-taking fork for linux kernel inhibitor
-  //
-  // This is in a fork because we have threads that should be unprivileged - but we need this
-  // constant service as root.
-  pid_t pid; int32_t inPipe[2]; int32_t outPipe[2];
-  if (pipe(inPipe) == -1 || pipe(outPipe) == -1) { printf("Failed to create pipe\n"); exit(1); }
-  if ((pid = fork()) < 0) { printf("Failed to fork\n"); exit(1); }
-
-  // Child runs lock fork
-  if (pid == 0) {
-    close(inPipe[1]);
-    close(outPipe[0]);
-    LinuxKernelInhibitInterface::lockFork(inPipe[0], outPipe[1]);
-    close(inPipe[0]);
-    close(outPipe[1]);
-    exit(0);
-  }
-  close(inPipe[0]);
-  close(outPipe[1]);
-
+  // Some InhibitInterface instances need setuid forks, create them now before any threads exist
   SystemdInhibitFork systemdInhibitFork; systemdInhibitFork.run();
+  LinuxKernelInhibitFork linuxInhibitFork; linuxInhibitFork.run();
 
   // D-Bus tries to prevent usage of setuid binaries by checking if euid != ruid.
   // We need setuid, but we can just set both euid *and* ruid and D-Bus is happy.
@@ -256,7 +238,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
   GnomeScreenSaverInhibitInterface i5(inhibitCB, unInhibitCB); inhibitors.push_back(&i5);
   CinnamonScreenSaverInhibitInterface i6(inhibitCB, unInhibitCB); inhibitors.push_back(&i6);
   MateScreenSaverInhibitInterface i11(inhibitCB, unInhibitCB); inhibitors.push_back(&i11);
-  LinuxKernelInhibitInterface i7(inhibitCB, unInhibitCB, inPipe[1], outPipe[0]);
+  LinuxKernelInhibitInterface i7(inhibitCB, unInhibitCB, &linuxInhibitFork);
   inhibitors.push_back(&i7);
 #ifdef BUILDFLAG_X11
   X11DPMSScreensaverInhibitInterface i12(inhibitCB, unInhibitCB); inhibitors.push_back(&i12);
@@ -277,7 +259,5 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char *argv[]) {
 
   while(1) for (auto& r : ros) {r.handle.resume(); fflush(stdout); }
 
-  close(inPipe[1]);
-  close(outPipe[0]);
   for (auto m : envMem) free(m);
 }

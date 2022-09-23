@@ -7,6 +7,7 @@ using namespace uinhibit;
 THIS::THIS() : Fork() {}
 
 void THIS::doRun() {
+  // TODO: use rxLine()?
   std::string buf;
   while(1) {
     if (buf.find('\n') == std::string::npos)

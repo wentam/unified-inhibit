@@ -162,10 +162,9 @@ namespace uinhibit {
     public:
       LinuxKernelInhibitInterface(std::function<void(InhibitInterface*,Inhibit)> inhibitCB,
                            std::function<void(InhibitInterface*,Inhibit)> unInhibitCB,
-                           int32_t forkFD, int32_t forkOutFD);
+                           LinuxKernelInhibitFork* inhibitFork);
 
       ReturnObject start();
-      static void lockFork(int32_t inFD, int32_t outFD);
     protected:
       struct _InhibitID {
         uint64_t instanceID;
@@ -186,9 +185,9 @@ namespace uinhibit {
       std::mutex registerMutex;
       std::vector<Inhibit> registerQueue;
       std::vector<InhibitID> unregisterQueue;
-      int32_t forkFD = -1;
 
       std::set<InhibitID> ourInhibits;
+      LinuxKernelInhibitFork* inhibitFork;
   };
 
   class XautolockInhibitInterface : public InhibitInterface {
