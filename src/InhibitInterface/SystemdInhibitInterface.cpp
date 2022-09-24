@@ -92,7 +92,6 @@ void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
 
 void THIS::handleListInhibitorsMsg(DBus::Message* msg, DBus::Message* retmsg) {
   if (this->monitor) return;
-  printf("Got call\n");
 
   struct Minhibitor {
     const char* what;
@@ -249,7 +248,8 @@ void THIS::poll() {
 }
 
 Inhibit THIS::doInhibit(InhibitRequest r) {
-  if ((r.type & InhibitType::SUSPEND) == InhibitType::NONE)
+  if (((r.type & InhibitType::SUSPEND) == InhibitType::NONE)
+      && ((r.type & InhibitType::SCREENSAVER) == InhibitType::NONE))
     throw uinhibit::InhibitRequestUnsupportedTypeException();
 
   int32_t fd = -1;
@@ -262,8 +262,7 @@ Inhibit THIS::doInhibit(InhibitRequest r) {
     fd = lockRef.rfd;
   }
 
-  // TODO not hardcoded type
-  Inhibit i = {InhibitType::SUSPEND, r.appname, r.reason, {}, (uint64_t)time(NULL)};
+  Inhibit i = {r.type, r.appname, r.reason, {}, (uint64_t)time(NULL)};
   i.id = this->mkId(fd);
   return i;
 }
@@ -301,10 +300,7 @@ InhibitType THIS::systemdType2us(std::string what) {
   InhibitType t = InhibitType::NONE;
 
   for (auto str : types) {
-    if (str == "idle") {
-      t = static_cast<InhibitType>(t | InhibitType::SCREENSAVER);
-      t = static_cast<InhibitType>(t | InhibitType::SUSPEND);
-    }
+    if (str == "idle") t = static_cast<InhibitType>(t | InhibitType::SCREENSAVER);
     if (str == "sleep") t = static_cast<InhibitType>(t | InhibitType::SUSPEND);
     // TODO support others
   }
