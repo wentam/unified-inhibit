@@ -53,6 +53,7 @@ THIS::THIS(std::function<void(InhibitInterface*,Inhibit)> inhibitCB,
     return;
   }
 
+  canRead = true;
   canSend = true;
   printf("[" ANSI_COLOR_GREEN "<->" ANSI_COLOR_RESET "] Linux kernel wakelock\n");
 };
@@ -98,6 +99,7 @@ void THIS::watcherThread() {
   while(1) {
     int32_t wakeLockFile = open(WAKE_LOCK_PATH, O_RDONLY); // Must open every time to get
                                                                    // latest info
+ 
     char buf[4096] = "";
     std::vector<std::string> locks;
     char prevChar = ' ';
@@ -122,7 +124,6 @@ void THIS::watcherThread() {
       if (!exists) {
         std::unique_lock<std::mutex> lk(this->registerMutex);
         auto id = this->mkId(lock.c_str());
-
         if (!this->ourInhibits.contains(id))
           registerQueue.push_back({
             InhibitType::SUSPEND,

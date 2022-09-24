@@ -504,6 +504,7 @@ namespace uinhibit {
       void handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg);
       void handleIntrospect(DBus::Message* msg, DBus::Message* retmsg);
       void handleListInhibitorsMsg(DBus::Message* msg, DBus::Message* retmsg);
+      void handleGetProperty(DBus::Message* msg, DBus::Message* retmsg);
 
       void handleInhibitEvent(Inhibit inhibit) override {};
       void handleUnInhibitEvent(Inhibit inhibit) override {};

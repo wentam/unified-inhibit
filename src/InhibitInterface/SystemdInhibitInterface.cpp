@@ -48,6 +48,7 @@ THIS::THIS(std::function<void(InhibitInterface*, Inhibit)> inhibitCB,
      {
        {INTERFACE, "Inhibit", METHOD_CAST &THIS::handleInhibitMsg, "*"},
        {INTERFACE, "ListInhibitors", METHOD_CAST &THIS::handleListInhibitorsMsg, "*"},
+       {"org.freedesktop.DBus.Properties", "Get", METHOD_CAST &THIS::handleGetProperty, "*"},
        {INTROSPECT_INTERFACE, "Introspect", METHOD_CAST &THIS::handleIntrospect, INTERFACE}
      },
      {}),
@@ -83,10 +84,25 @@ void THIS::handleIntrospect(DBus::Message* msg, DBus::Message* retmsg) {
       "    <method name='ListInhibitors'>"
       "      <arg name='inhibitor_list' type='a(ssssuu)' direction='out'/>"
       "    </method>"
+      "    <property name='BlockInhibited' type='s' access='read'/>"
       "  </interface>"
       "</node>";
 
     msg->newMethodReturn().appendArgs(DBUS_TYPE_STRING,&introspectXml,DBUS_TYPE_INVALID)->send();
+  }
+}
+
+void THIS::handleGetProperty(DBus::Message* msg, DBus::Message* retmsg) {
+  if (this->monitor) return;
+  const char* interface; const char* property;
+  msg->getArgs(DBUS_TYPE_STRING, &interface, DBUS_TYPE_STRING, &property, DBUS_TYPE_INVALID);
+
+  if (std::string(interface) == INTERFACE) {
+    if (std::string(property) == "BlockInhibited") {
+      std::string what = us2systemdType(this->inhibited());
+      const char* str = what.c_str();
+      msg->newMethodReturn().appendArgs(DBUS_TYPE_STRING, &str, DBUS_TYPE_INVALID)->send();
+    }
   }
 }
 
