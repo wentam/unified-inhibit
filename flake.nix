@@ -15,7 +15,7 @@
         buildInputs = [ pkgs.dbus pkgs.xorg.libX11 pkgs.xorg.libXScrnSaver ];
         nativeBuildInputs = [ pkgs.pkgconf pkgs.scdoc ];
       };
-      packages.default = pkgs.stdenv.mkDerivation {
+      packages.default = pkgs.gcc12Stdenv.mkDerivation {
         name="unified-inhibit";
         src = ./.;
         buildInputs = [ pkgs.dbus pkgs.xorg.libX11 pkgs.xorg.libXScrnSaver ];
