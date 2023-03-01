@@ -215,6 +215,18 @@ void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
                DBUS_TYPE_STRING, &mode,
                DBUS_TYPE_INVALID);
 
+  // HACK:
+  // Gnome session manager forwards events to systemd, we pick up on an event, forward it
+  // back to gnome session manager, and thus end up in a logical loop.
+  //
+  // Gnome gives all of these systemd inhibitors identical information, so we can't identify
+  // our own events as they come in.
+  //
+  // Gnome puts "user session inhibited" in the systemd why string for all of these.
+  // Thus, we ignore all systemd inhibits that come with this message, effectively filtering
+  // out all of the gnome forwards.
+  if (std::string(why) == "user session inhibited") return;
+
   if (retmsg != nullptr && this->monitor) {
     int32_t fd = -1;
     retmsg->getArgs(DBUS_TYPE_UNIX_FD, &fd, DBUS_TYPE_INVALID);
