@@ -514,7 +514,7 @@ namespace uinhibit {
       void poll() override;
 
     private:
-      void releaseThread(const char* path, Inhibit in);
+      void releaseThread(const char* path, Inhibit in, bool delay);
       void releaseThreadOurFd(int32_t fd, std::string path, Inhibit in);
       InhibitID mkId(uint32_t fd);
       InhibitType systemdType2us(std::string what);

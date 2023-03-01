@@ -161,10 +161,24 @@ void THIS::handleListInhibitorsMsg(DBus::Message* msg, DBus::Message* retmsg) {
   ret.send();
 }
 
-void THIS::releaseThread(const char* path, Inhibit in) {
+void THIS::releaseThread(const char* path, Inhibit in, bool delay) {
+  uint64_t startTime = time(NULL);
+
   // We don't have read access to wait for EOF, so we just need to wait until the file goes away
   // TODO: could probably use inotify for this
   while (1) {
+
+    // Systemd keeps the fd around for delay locks even after the delay time
+    // This delay time is system-configurable, but defaults to 5 seconds.
+    // We will just release any delay locks after 5 seconds.
+    if (delay && time(NULL)-startTime > 5) {
+      {
+        std::unique_lock<std::mutex> lk(this->releaseQueueMutex);
+        this->releaseQueue.push_back(in);
+      }
+      break;
+    }
+
     int r = access(path, F_OK);
     if (r != 0) {
       {
@@ -215,7 +229,7 @@ void THIS::handleInhibitMsg(DBus::Message* msg, DBus::Message* retmsg) {
     close(fd);
 
     if (rl >= 0) {
-      std::thread t(&THIS::releaseThread, this, filePath, in);
+      std::thread t(&THIS::releaseThread, this, filePath, in, (std::string(mode) == "delay"));
       t.detach();
     }
   } else {
