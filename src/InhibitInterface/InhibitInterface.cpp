@@ -49,7 +49,7 @@ namespace uinhibit {
   void InhibitInterface::unInhibit(InhibitID id) {
     if (this->activeInhibits.contains(id)) {
       auto mid = this->activeInhibits.at(id);
-      this->doUnInhibit(id);  
+      this->doUnInhibit(id);
       this->activeInhibits.erase(id);
       this->callEvent(false, mid);
     }

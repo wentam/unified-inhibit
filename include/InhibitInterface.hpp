@@ -291,12 +291,20 @@ namespace uinhibit {
       void handleUnInhibitEvent(Inhibit inhibit) override {};
       void handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) override;
 
+      struct _InhibitID {
+        uint64_t instanceID;
+        uint64_t cookie;
+      };
+
     private:
       InhibitType lastInhibited = InhibitType::NONE;
       bool ok = false;
 
       std::map<InhibitType,std::string> cmds;
       std::map<InhibitType,std::string> uncmds;
+
+      uint64_t lastCookie = 0;
+      InhibitID mkId(uint64_t cookie);
   };
 
   class DBusInhibitInterface : public InhibitInterface {

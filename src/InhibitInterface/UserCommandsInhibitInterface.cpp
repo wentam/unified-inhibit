@@ -92,11 +92,13 @@ void THIS::handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) {
   }
 
   if (lastInhibited != inhibited) {
-    if (cmds.contains(InhibitType::NONE) && inhibited != InhibitType::NONE) {
+    if (cmds.contains(InhibitType::NONE) && inhibited != InhibitType::NONE
+                                         && lastInhibited == InhibitType::NONE) {
       printf("Running inhibit command: %s\n", this->cmds.at(InhibitType::NONE).c_str());
       [[maybe_unused]] int r = system(this->cmds.at(InhibitType::NONE).c_str());
     }
-    if (uncmds.contains(InhibitType::NONE) && inhibited == InhibitType::NONE) {
+    if (uncmds.contains(InhibitType::NONE) && inhibited == InhibitType::NONE
+                                           && lastInhibited != InhibitType::NONE) {
       printf("Running uninhibit command: %s\n", this->uncmds.at(InhibitType::NONE).c_str());
       [[maybe_unused]] int r = system(this->uncmds.at(InhibitType::NONE).c_str());
     }
@@ -106,11 +108,22 @@ void THIS::handleInhibitStateChanged(InhibitType inhibited, Inhibit inhibit) {
 };
 
 Inhibit THIS::doInhibit(InhibitRequest r) {
+  this->lastCookie++;
+  if (this->lastCookie == 0) this->lastCookie = 1;
+
   Inhibit ret = {};
   ret.type = r.type;
   ret.appname = r.appname;
   ret.reason = r.reason;
-  ret.id = {};
+  ret.id = this->mkId(this->lastCookie);
   ret.created = time(NULL);
   return ret;
 }
+
+InhibitID THIS::mkId(uint64_t cookie) {
+  _InhibitID idStruct = {this->instanceId, cookie};
+
+  auto ptr = reinterpret_cast<std::byte*>(&idStruct);
+  InhibitID id(ptr, ptr+sizeof(idStruct));
+  return id;
+};
