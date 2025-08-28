@@ -10,12 +10,12 @@
     let
       pkgs = nixpkgs.legacyPackages.${system};
     in rec {
-      devShells.default = pkgs.gcc12Stdenv.mkDerivation {
+      devShells.default = pkgs.stdenv.mkDerivation {
         name = "build";
         buildInputs = [ pkgs.dbus pkgs.xorg.libX11 pkgs.xorg.libXScrnSaver ];
         nativeBuildInputs = [ pkgs.pkgconf pkgs.scdoc ];
       };
-      packages.default = pkgs.gcc12Stdenv.mkDerivation {
+      packages.default = pkgs.stdenv.mkDerivation {
         name="unified-inhibit";
         src = ./.;
         buildInputs = [ pkgs.dbus pkgs.xorg.libX11 pkgs.xorg.libXScrnSaver ];

@@ -17,6 +17,7 @@
 #include <sys/inotify.h>
 #include <fcntl.h>
 #include "util.hpp"
+#include <algorithm>
 
 #define THIS LinuxKernelInhibitInterface
 #define WAKE_LOCK_PATH "/sys/power/wake_lock"

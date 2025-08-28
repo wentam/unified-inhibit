@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include "util.hpp"
 #include <cstring>
+#include <algorithm>
 
 #define THIS GnomeSessionManagerInhibitInterface
 #define METHOD_CAST (void (DBusInhibitInterface::*)(DBus::Message* msg, DBus::Message* retmsg))
