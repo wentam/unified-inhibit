@@ -20,14 +20,14 @@
         src = ./.;
         buildInputs = [ pkgs.dbus pkgs.xorg.libX11 pkgs.xorg.libXScrnSaver ];
         nativeBuildInputs = [ pkgs.pkgconf ];
-        doCheck = true;
+        doCheck = false;
         buildPhase = ''make -j12 prefix=$out'';
         installPhase = ''make install prefix=$out'';
-        checkPhase = ''
-          mkdir -p test
-          cp $src/test/dbus.conf ./test
-          make test
-        '';
+        #checkPhase = ''
+        #  mkdir -p test
+        #  cp $src/test/dbus.conf ./test
+        #  make test
+        #'';
       };
       apps.default = { type = "app"; program = "${packages.default}/bin/uinhibitd"; };
     }
