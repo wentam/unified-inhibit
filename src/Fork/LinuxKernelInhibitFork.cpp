@@ -1,5 +1,6 @@
 #include "Fork.hpp"
 #include <fcntl.h>
+#include <algorithm>
 
 using namespace uinhibit;
 
