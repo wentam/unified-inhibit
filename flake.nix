@@ -21,8 +21,9 @@
         buildInputs = [ pkgs.dbus pkgs.xorg.libX11 pkgs.xorg.libXScrnSaver ];
         nativeBuildInputs = [ pkgs.pkgconf ];
         doCheck = false;
-        buildPhase = ''make -j12 prefix=$out'';
-        installPhase = ''make install prefix=$out'';
+        doConfigure = false;
+        enableParallelBuilding = true;
+        makeFlags = [ "prefix=$(out)" ];
         #checkPhase = ''
         #  mkdir -p test
         #  cp $src/test/dbus.conf ./test
