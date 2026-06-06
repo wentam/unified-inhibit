@@ -12,13 +12,13 @@
     in rec {
       devShells.default = pkgs.stdenv.mkDerivation {
         name = "build";
-        buildInputs = [ pkgs.dbus pkgs.xorg.libX11 pkgs.xorg.libXScrnSaver ];
+        buildInputs = [ pkgs.dbus pkgs.systemd pkgs.xorg.libX11 pkgs.xorg.libXScrnSaver ];
         nativeBuildInputs = [ pkgs.pkgconf pkgs.scdoc ];
       };
       packages.default = pkgs.stdenv.mkDerivation {
         name="unified-inhibit";
         src = ./.;
-        buildInputs = [ pkgs.dbus pkgs.xorg.libX11 pkgs.xorg.libXScrnSaver ];
+        buildInputs = [ pkgs.dbus pkgs.systemd pkgs.xorg.libX11 pkgs.xorg.libXScrnSaver ];
         nativeBuildInputs = [ pkgs.pkgconf ];
         doCheck = false;
         doConfigure = false;
