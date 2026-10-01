@@ -20,6 +20,7 @@
 #include <vector>
 #include <functional>
 #include <cstring>
+#include <cstdint>
 
 // Thin libdbus wrapper
 //

@@ -18,6 +18,7 @@
 #include "util.hpp"
 #include <sys/inotify.h>
 #include <algorithm>
+#include <limits.h>
 
 #define THIS SxmoInhibitInterface
 
